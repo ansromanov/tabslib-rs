@@ -23,6 +23,27 @@ test:
         cargo test --all-features; \
     fi
 
+# Only the tests related to your diff, falling back to the whole suite when the
+# change is broad or the filter matches nothing. The suite runs in milliseconds
+# today, so this exists to stay correct as it grows rather than to save time.
+test-pr base="origin/main":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    filter="$(scripts/related-tests.sh {{base}})"
+    if [ -z "$filter" ]; then
+        echo "Broad change: running the whole suite."
+        cargo nextest run --all-features
+        exit 0
+    fi
+    n=$(cargo nextest list --all-features -E "$filter" 2>/dev/null | grep -cE '^[[:space:]]+[[:alnum:]]' || true)
+    echo "Filter '$filter' selects $n test(s)."
+    if [ "$n" -eq 0 ]; then
+        echo "Filter matched nothing; running the whole suite."
+        cargo nextest run --all-features
+    else
+        cargo nextest run --all-features -E "$filter"
+    fi
+
 doc:
     RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 

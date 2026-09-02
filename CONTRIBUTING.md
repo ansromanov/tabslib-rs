@@ -23,7 +23,7 @@ just check          # fmt, clippy, tests, docs — runs in seconds
 
 ## What belongs here
 
-Format, model and deterministic edits. Ask:
+Model, codecs and deterministic edits. Ask:
 
 > Can this be specified without naming a genre, a band, or a statistic measured
 > over a collection of music?

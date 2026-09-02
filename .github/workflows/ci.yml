@@ -1,7 +1,12 @@
 name: CI
 
-# The gate every pull request must pass. `main` is protected and takes no
-# direct pushes, so this is the only path into the branch.
+# The gate every pull request must pass. `main` is protected and takes no direct
+# pushes, so this is the only path in.
+#
+# Only `Gate` and `PR closes an issue` are required by the branch ruleset. The
+# Rust jobs are conditional on the change touching code, and `Gate` aggregates
+# them. A required check that can be skipped blocks every documentation PR
+# forever; this shape avoids that.
 on:
   pull_request:
     branches: [main]
@@ -13,6 +18,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   link:
@@ -34,15 +43,45 @@ jobs:
           echo "::error::PR body must close an issue (e.g. 'Closes #12'), or carry the 'no-issue' label."
           exit 1
 
-  test:
+  changes:
+    name: Detect what changed
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Classify the diff
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git fetch -q origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)"
+          echo "Changed files:"; echo "$changed" | sed 's/^/  /'
+          # Prose, agent instruction files and issue templates cannot affect the
+          # build. Everything else can, including the workflows themselves.
+          if echo "$changed" | grep -qvE '^(.*\.md|LICENSE|\.agent/.*|\.cursor/.*|\.github/ISSUE_TEMPLATE/.*|\.gitignore)$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "-> touches code, running the Rust gate"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "-> documentation only, skipping the Rust gate"
+          fi
+
+  rust:
     name: fmt, clippy, test, docs
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+        with: { components: "rustfmt, clippy" }
       - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@nextest
 
       - name: Format
         run: cargo fmt --all -- --check
@@ -50,26 +89,42 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+      # Compilation dominates this job; the suite itself runs in milliseconds.
+      # Selection is applied anyway so the mechanism stays exercised and correct
+      # as the suite grows.
       - name: Test
-        run: cargo test --all-features
+        run: |
+          run_all() { echo "Running the whole suite."; cargo nextest run --all-features; }
+          filter=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch -q origin "${{ github.base_ref }}"
+            filter="$(scripts/related-tests.sh "origin/${{ github.base_ref }}")"
+          fi
+          if [ -z "$filter" ]; then run_all; exit 0; fi
+          n=$(cargo nextest list --all-features -E "$filter" 2>/dev/null | grep -cE '^[[:space:]]+[[:alnum:]]' || true)
+          echo "Filter '$filter' selects $n test(s)."
+          # An empty selection is not a pass. Falling back is the difference
+          # between "these tests passed" and "no test ran".
+          if [ "$n" -eq 0 ]; then
+            echo "::notice::Filter matched no tests; running the whole suite instead."
+            run_all
+          else
+            cargo nextest run --all-features -E "$filter"
+          fi
 
       - name: Docs build clean
-        env:
-          RUSTDOCFLAGS: -D warnings
+        env: { RUSTDOCFLAGS: -D warnings }
         run: cargo doc --no-deps --all-features
 
-      # The crate must be usable by someone who has no Guitar Pro files at all.
-      # A test that reads from disk breaks that and is a merge blocker.
       - name: No test reads a file
         run: |
-          if grep -rnE 'std::fs::(read|File::open)|include_bytes!' tests/ src/ \
-             --include='*_test.rs' --include='tests/*.rs' 2>/dev/null; then
-            echo "::error::Tests must not read files. Use tabslib::fixtures."
+          if grep -rnE 'std::fs::(read|File::open)|include_bytes!' tests/ src/ 2>/dev/null | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//'; then
+            echo "::error::Tests must not read files from disk. Use tabslib::fixtures."
             exit 1
           fi
           echo "No file reads in tests."
 
-      - name: No content-policy violations
+      - name: No music files committed
         run: |
           if git ls-files | grep -iE '\.(gp|gp3|gp4|gp5|gpx|mid|midi|wav|mp3|flac)$'; then
             echo "::error::Music files must not be committed. See CONTENT-POLICY.md."
@@ -77,11 +132,10 @@ jobs:
           fi
           echo "No music files committed."
 
-  # The declared rust-version must be true, not aspirational. The floor is set
-  # by transitive dependencies (zip -> indexmap -> hashbrown), so it moves when
-  # they do; this job is what notices.
   msrv:
-    name: Minimum supported Rust version
+    name: MSRV
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -89,8 +143,26 @@ jobs:
         id: msrv
         run: echo "v=$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
       - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ steps.msrv.outputs.v }}
+        with: { toolchain: "${{ steps.msrv.outputs.v }}" }
       - uses: Swatinem/rust-cache@v2
       - name: Check at the declared minimum
         run: cargo check --all-features --all-targets
+
+  # Always runs, so it is safe to require. Succeeds when nothing it depends on
+  # failed, including when the Rust jobs were skipped as documentation-only.
+  gate:
+    name: Gate
+    if: always()
+    needs: [changes, rust, msrv]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          echo "changes=${{ needs.changes.result }} rust=${{ needs.rust.result }} msrv=${{ needs.msrv.result }}"
+          for r in "${{ needs.changes.result }}" "${{ needs.rust.result }}" "${{ needs.msrv.result }}"; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "::error::A required job did not succeed."; exit 1 ;;
+            esac
+          done
+          echo "Gate passed."

@@ -1,9 +1,19 @@
-//! tabslib -- an independent Guitar Pro score engine.
+//! tabslib -- a general-purpose tablature library.
 //!
-//! Scope for 0.1: read and write the GP7/8 container and its GPIF payload into
-//! an owned document model, with no dependency on any existing Guitar Pro
-//! library. The model and codec are designed from the file format, not
-//! translated from another implementation.
+//! An owned, immutable document model for fretted-instrument notation, codecs
+//! for the formats that carry it, and deterministic edits over both. Scope for
+//! 0.1 is reading and writing the version 7 and 8 `.gp` container and its XML
+//! payload; ASCII tablature, MusicXML and MIDI are planned.
+//!
+//! The library does not decide what to play. Generation, arrangement, style
+//! modelling and quality scoring are deliberately out of scope: they need a
+//! model of a musical style, and belong in a crate built on top of this one.
+//!
+//! Written from published format behaviour, with no dependency on any vendor
+//! library and nothing translated from another implementation.
+//!
+//! Guitar Pro is a trademark of Arobas Music. This library is not affiliated
+//! with or endorsed by Arobas Music; format names describe compatibility only.
 
 #![warn(missing_docs)]
 #![warn(clippy::all)]

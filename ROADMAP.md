@@ -1,7 +1,8 @@
 # Roadmap
 
-Target: a complete, dependency-free Rust library for reading, inspecting,
-editing and writing Guitar Pro scores.
+Target: a complete, dependency-free, general-purpose tablature library —
+reading, inspecting, editing and writing fretted-instrument notation across the
+formats that carry it.
 
 Scope is deliberately bounded. This crate does **format, model and
 deterministic edits**. It does not decide what to play — no generation, no
@@ -19,8 +20,8 @@ Transposing a track can. "Add a fill where the section changes" cannot.
 
 The file format, completely, in both directions.
 
-- [x] GP7/8 container, deterministic write
-- [x] GPIF parse: tracks, tunings, colours, master bars, sections, meters, clefs, bars, voices, beats, rhythms, notes
+- [x] Container read and write, deterministic
+- [x] XML payload parse: tracks, tunings, colours, master bars, sections, meters, clefs, bars, voices, beats, rhythms, notes
 - [x] Techniques: palm mute, dead, tapped, hammer-on/pull-off, let-ring, vibrato, slide flags, bend values, harmonics
 - [x] Rhythm as exact fractions — values, dots, tuplets
 - [ ] Dynamics per beat
@@ -32,7 +33,7 @@ The file format, completely, in both directions.
 - [ ] **Lossless round-trip**: save and reload changes nothing measurable
 
 Phase 1 ends when a file survives a round-trip with no measurable difference
-and opens correctly in Guitar Pro.
+and reopens correctly in the application that wrote it.
 
 ## Phase 2 — inspection
 
@@ -103,6 +104,6 @@ Generation, arrangement, style modelling, quality scoring, and anything that
 needs a collection of music to work. Those belong in a separate crate built on
 this one.
 
-Legacy binary formats (`.gp3`, `.gp4`, `.gp5`, `.gpx`) are not planned. Guitar
-Pro converts them, and four binary decoders is a large surface to own for files
-that can be converted once.
+Older binary container versions are not planned. The originating application
+converts them, and four binary decoders is a large surface to own for files that
+can be converted once.

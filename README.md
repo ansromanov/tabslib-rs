@@ -5,11 +5,25 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![MSRV](https://img.shields.io/badge/rust-1.85%2B-orange)
 
-A Guitar Pro score engine in Rust: GP7/8 container and GPIF codec over an
-owned, immutable document model.
+A general-purpose tablature library for Rust.
 
-Written from the file format itself. No dependency on any other Guitar Pro
-library.
+An owned, immutable document model for fretted-instrument notation, codecs for
+the formats that carry it, and deterministic edits over both.
+
+Written from published format behaviour. No dependency on any vendor library.
+
+What it is *not*: it does not decide what to play. Generation, arrangement,
+style modelling and quality scoring are out of scope by design — see
+[Scope](#scope).
+
+## Formats
+
+| format | read | write |
+| --- | :-: | :-: |
+| `.gp` (version 7 and 8 containers) | yes | partial |
+| ASCII tablature | — | planned |
+| MusicXML | planned | planned |
+| MIDI | planned | planned |
 
 ## Status — 0.1, codec only
 
@@ -18,11 +32,11 @@ Reading is solid on real files. Writing is correct for the modelled subset and
 
 | | |
 | --- | --- |
-| container | GP7/8 zip read and write, deterministic (fixed timestamp) |
+| container | zip read and write, deterministic (fixed timestamp) |
 | read | tracks, tunings, colours, master bars, sections, time signatures, clefs, bars, voices, beats, rhythms, notes, techniques |
 | techniques | palm mute, dead, tapped, hammer-on/pull-off, let-ring, vibrato, slide (with flags), bend (with values), harmonics (with type and fret) |
-| write | the above, in the shapes Guitar Pro itself emits |
-| **not yet** | RSE / mixer state, stylesheets, XProperties, lyrics, chord diagrams, automations, repeats, alternate endings, tuplet output, MIDI and MusicXML codecs, legacy `.gp3/.gp4/.gp5` |
+| write | the above, in the shapes the originating application emits |
+| **not yet** | mixer state, stylesheets, extended properties, lyrics, chord diagrams, automations, repeats, alternate endings, tuplet output, MIDI and MusicXML codecs, older container versions |
 
 Because RSE and several container-level blocks are not modelled, a save
 produces a smaller file than the source. Use it to read, and to round-trip the
@@ -39,6 +53,17 @@ println!("{} — {} notes, {} sections", doc.title, doc.note_count(), doc.sectio
 let out = tabslib::save(&doc)?;
 ```
 
+## Scope
+
+The library does **model, codecs and deterministic edits**. Before adding
+anything, ask:
+
+> Can this be specified without naming a genre, a band, or a statistic measured
+> over a collection of music?
+
+Transposing a track can. "Add a fill where the section changes" cannot — that
+needs a model of a style, and belongs in a downstream crate built on this one.
+
 ## Design notes
 
 Three decisions worth stating, because each is a place the format punishes a
@@ -51,15 +76,15 @@ quarter note while the note count stays correct, so nothing downstream notices.
 `Rhythm` keeps the written value, the augmentation dots and the tuplet
 separately, and `as_fraction()` is exact integer arithmetic.
 
-**Several techniques live in attributes, not element names.** GPIF writes
-`<Property name="PalmMuted">`. A reader that matches on element names sees
-`Property` and finds nothing, so a file full of palm mutes reads as having
+**Several techniques live in attributes, not element names.** The XML payload
+writes `<Property name="PalmMuted">`. A reader that matches on element names
+sees `Property` and finds nothing, so a file full of palm mutes reads as having
 none. `Element::property()` exists so that lookup is explicit.
 
-**Rhythms are referenced, not inlined.** Guitar Pro writes `<Rhythm ref="N"/>`
+**Rhythms are referenced, not inlined.** The payload writes `<Rhythm ref="N"/>`
 against a keyed `<Rhythm id="N">` table, and spells sixteenths `16th`, not
-`Sixteenth`. Writing either differently produces a file that neither Guitar Pro
-nor a correct reader resolves.
+`Sixteenth`. Writing either differently produces a file that neither the
+originating application nor a correct reader resolves.
 
 Nodes reference each other by id. There are no `parent`, `next` or `previous`
 links, so ownership stays a tree and edits stay value-shaped.
@@ -99,6 +124,12 @@ Conventions — architecture, Rust guidelines, testing layout and the PR workflo
 
 `main` is protected; every change lands through a pull request that passes
 format, clippy, tests, documentation and an MSRV check.
+
+## Trademarks
+
+Guitar Pro is a trademark of Arobas Music. This project is not affiliated with,
+endorsed by, or derived from Arobas Music or its software. Format names are used
+only to describe what this library can read and write.
 
 ## License
 
