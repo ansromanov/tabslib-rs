@@ -5,12 +5,12 @@
 //! library. The model and codec are designed from the file format, not
 //! translated from another implementation.
 
-pub mod error;
-pub mod model;
 pub mod container;
-pub mod gpif;
+pub mod error;
 pub mod fixtures;
+pub mod gpif;
 pub mod inspect;
+pub mod model;
 
 pub use error::{Error, Result};
 pub use model::Document;

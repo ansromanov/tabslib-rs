@@ -114,7 +114,7 @@ pub fn beat_positions(
                 step: (quotient / divisor) as u32,
                 exact: quotient % divisor == 0,
             };
-        onset = onset.plus(duration);
+            onset = onset.plus(duration);
             result
         })
         .collect()
@@ -278,7 +278,7 @@ pub fn bar_integrity(doc: &Document) -> Vec<BarIntegrity> {
             let capacity = bar_capacity(master.time);
             for (voice_index, voice) in bar.voices.iter().enumerate() {
                 let duration = voice.beats.iter().fold(Fraction::new(0, 1), |sum, beat| {
-                        sum.plus(rhythm_duration(beat.rhythm))
+                    sum.plus(rhythm_duration(beat.rhythm))
                 });
                 if duration != capacity {
                     result.push(BarIntegrity {
@@ -301,7 +301,7 @@ pub fn summary(doc: &Document) -> ScoreSummary {
         .master_bars
         .iter()
         .fold(Fraction::new(0, 1), |sum, bar| {
-        sum.plus(bar_capacity(bar.time))
+            sum.plus(bar_capacity(bar.time))
         });
     ScoreSummary {
         tracks: doc

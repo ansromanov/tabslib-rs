@@ -39,13 +39,31 @@ struct Ids {
 }
 
 impl Ids {
-    fn note(&mut self) -> u32 { self.note += 1; self.note - 1 }
-    fn beat(&mut self) -> u32 { self.beat += 1; self.beat - 1 }
-    fn voice(&mut self) -> u32 { self.voice += 1; self.voice - 1 }
-    fn bar(&mut self) -> u32 { self.bar += 1; self.bar - 1 }
+    fn note(&mut self) -> u32 {
+        self.note += 1;
+        self.note - 1
+    }
+    fn beat(&mut self) -> u32 {
+        self.beat += 1;
+        self.beat - 1
+    }
+    fn voice(&mut self) -> u32 {
+        self.voice += 1;
+        self.voice - 1
+    }
+    fn bar(&mut self) -> u32 {
+        self.bar += 1;
+        self.bar - 1
+    }
 }
 
-fn fretted(ids: &mut Ids, string: u32, fret: i32, tuning: &[i32], techniques: Vec<Technique>) -> Note {
+fn fretted(
+    ids: &mut Ids,
+    string: u32,
+    fret: i32,
+    tuning: &[i32],
+    techniques: Vec<Technique>,
+) -> Note {
     let open = tuning[tuning.len() - string as usize];
     Note {
         id: ids.note(),
@@ -58,33 +76,83 @@ fn fretted(ids: &mut Ids, string: u32, fret: i32, tuning: &[i32], techniques: Ve
 }
 
 fn hit(ids: &mut Ids, midi: i32) -> Note {
-    Note { id: ids.note(), midi: Some(midi), string: None, fret: None, articulation: Some(midi), techniques: Vec::new() }
+    Note {
+        id: ids.note(),
+        midi: Some(midi),
+        string: None,
+        fret: None,
+        articulation: Some(midi),
+        techniques: Vec::new(),
+    }
 }
 
 fn beat(ids: &mut Ids, rhythm: Rhythm, notes: Vec<Note>) -> Beat {
-    Beat { id: ids.beat(), rhythm, notes, dynamic: None }
+    Beat {
+        id: ids.beat(),
+        rhythm,
+        notes,
+        dynamic: None,
+    }
 }
 
 fn bar(ids: &mut Ids, clef: &str, beats: Vec<Beat>) -> Bar {
-    Bar { id: ids.bar(), clef: Some(clef.to_string()), voices: vec![Voice { id: ids.voice(), beats }] }
+    Bar {
+        id: ids.bar(),
+        clef: Some(clef.to_string()),
+        voices: vec![Voice {
+            id: ids.voice(),
+            beats,
+        }],
+    }
 }
 
-fn assemble(title: &str, tracks: Vec<Track>, bars: Vec<Bar>, meters: Vec<(u32, u32)>, sections: Vec<(usize, &str)>) -> Document {
-    let per = if tracks.is_empty() { 0 } else { bars.len() / tracks.len().max(1) };
+fn assemble(
+    title: &str,
+    tracks: Vec<Track>,
+    bars: Vec<Bar>,
+    meters: Vec<(u32, u32)>,
+    sections: Vec<(usize, &str)>,
+) -> Document {
+    let per = if tracks.is_empty() {
+        0
+    } else {
+        bars.len() / tracks.len().max(1)
+    };
     let master_bars = (0..per.max(bars.len().min(meters.len().max(1))))
         .map(|i| MasterBar {
             index: i,
             time: *meters.get(i).unwrap_or(meters.first().unwrap_or(&(4, 4))),
-            section: sections.iter().find(|(at, _)| *at == i).map(|(_, n)| n.to_string()),
+            section: sections
+                .iter()
+                .find(|(at, _)| *at == i)
+                .map(|(_, n)| n.to_string()),
             double_bar: false,
-            bar_ids: tracks.iter().enumerate().map(|(t, _)| (t * per + i) as i32).collect(),
+            bar_ids: tracks
+                .iter()
+                .enumerate()
+                .map(|(t, _)| (t * per + i) as i32)
+                .collect(),
         })
         .collect();
-    Document { title: title.to_string(), artist: "test".into(), tracks, master_bars, bars, tempo_map: vec![], key: None }
+    Document {
+        title: title.to_string(),
+        artist: "test".into(),
+        tracks,
+        master_bars,
+        bars,
+        tempo_map: vec![],
+        key: None,
+    }
 }
 
 fn guitar(name: &str, tuning: &[i32]) -> Track {
-    Track { id: 0, name: name.to_string(), color: Some((255, 0, 0)), tuning: tuning.to_vec(), midi_program: Some(30) }
+    Track {
+        id: 0,
+        name: name.to_string(),
+        color: Some((255, 0, 0)),
+        tuning: tuning.to_vec(),
+        midi_program: Some(30),
+    }
 }
 
 /// Every note value, plain, dotted and as a triplet.
@@ -95,20 +163,41 @@ pub fn all_note_values() -> Document {
     let mut ids = Ids::default();
     let tun = TUNING_E_STANDARD;
     let values = [
-        NoteValue::Whole, NoteValue::Half, NoteValue::Quarter, NoteValue::Eighth,
-        NoteValue::Sixteenth, NoteValue::ThirtySecond, NoteValue::SixtyFourth,
+        NoteValue::Whole,
+        NoteValue::Half,
+        NoteValue::Quarter,
+        NoteValue::Eighth,
+        NoteValue::Sixteenth,
+        NoteValue::ThirtySecond,
+        NoteValue::SixtyFourth,
     ];
     let mut bars = Vec::new();
     for v in values {
-        for (dots, tuplet) in [(0u8, None), (1, None), (2, None), (0, Some((3u32, 2u32))), (0, Some((5, 4)))] {
-            let r = Rhythm { value: v, dots, tuplet };
+        for (dots, tuplet) in [
+            (0u8, None),
+            (1, None),
+            (2, None),
+            (0, Some((3u32, 2u32))),
+            (0, Some((5, 4))),
+        ] {
+            let r = Rhythm {
+                value: v,
+                dots,
+                tuplet,
+            };
             let n = fretted(&mut ids, 6, 5, &tun, vec![]);
             let b = beat(&mut ids, r, vec![n]);
             bars.push(bar(&mut ids, "G2", vec![b]));
         }
     }
     let n = bars.len();
-    assemble("note values", vec![guitar("gtr", &tun)], bars, vec![(4, 4); n], vec![])
+    assemble(
+        "note values",
+        vec![guitar("gtr", &tun)],
+        bars,
+        vec![(4, 4); n],
+        vec![],
+    )
 }
 
 /// Repeated single frets -- 5555, 7777, 8888 -- one bar each, straight eighths.
@@ -126,7 +215,13 @@ pub fn repeated_frets() -> Document {
         bars.push(bar(&mut ids, "G2", beats));
     }
     let n = bars.len();
-    assemble("repeated frets", vec![guitar("gtr", &tun)], bars, vec![(4, 4); n], vec![])
+    assemble(
+        "repeated frets",
+        vec![guitar("gtr", &tun)],
+        bars,
+        vec![(4, 4); n],
+        vec![],
+    )
 }
 
 /// A two-octave major scale up and down, one note per eighth.
@@ -150,7 +245,13 @@ pub fn scale_run() -> Document {
         bars.push(bar(&mut ids, "G2", beats));
     }
     let n = bars.len();
-    assemble("scale run", vec![guitar("gtr", &tun)], bars, vec![(4, 4); n], vec![])
+    assemble(
+        "scale run",
+        vec![guitar("gtr", &tun)],
+        bars,
+        vec![(4, 4); n],
+        vec![],
+    )
 }
 
 /// Power chords: root+fifth and root+fifth+octave, moved up the neck.
@@ -175,7 +276,13 @@ pub fn power_chords() -> Document {
         bars.push(bar(&mut ids, "G2", beats));
     }
     let n = bars.len();
-    assemble("power chords", vec![guitar("gtr", &tun)], bars, vec![(4, 4); n], vec![])
+    assemble(
+        "power chords",
+        vec![guitar("gtr", &tun)],
+        bars,
+        vec![(4, 4); n],
+        vec![],
+    )
 }
 
 /// One bar per technique, so a codec that drops one shows a census delta.
@@ -192,9 +299,19 @@ pub fn every_technique() -> Document {
         vec![Technique::Vibrato],
         vec![Technique::Slide { flags: 1 }],
         vec![Technique::Slide { flags: 2 }],
-        vec![Technique::Bend { origin: 0, middle: 50, dest: 100 }],
-        vec![Technique::Harmonic { kind: HarmonicKind::Natural, fret: Some(12) }],
-        vec![Technique::Harmonic { kind: HarmonicKind::Pinch, fret: None }],
+        vec![Technique::Bend {
+            origin: 0,
+            middle: 50,
+            dest: 100,
+        }],
+        vec![Technique::Harmonic {
+            kind: HarmonicKind::Natural,
+            fret: Some(12),
+        }],
+        vec![Technique::Harmonic {
+            kind: HarmonicKind::Pinch,
+            fret: None,
+        }],
         vec![Technique::PalmMute, Technique::HammerOrigin],
     ];
     let mut bars = Vec::new();
@@ -208,7 +325,13 @@ pub fn every_technique() -> Document {
         bars.push(bar(&mut ids, "G2", beats));
     }
     let n = bars.len();
-    assemble("techniques", vec![guitar("gtr", &tun)], bars, vec![(4, 4); n], vec![])
+    assemble(
+        "techniques",
+        vec![guitar("gtr", &tun)],
+        bars,
+        vec![(4, 4); n],
+        vec![],
+    )
 }
 
 /// Generic drum patterns: straight rock beat, double kick, blast beat, a fill.
@@ -221,8 +344,12 @@ pub fn drum_patterns() -> Document {
     let mut beats = Vec::new();
     for i in 0..8 {
         let mut notes = vec![hit(&mut ids, HAT_CLOSED)];
-        if i % 4 == 0 { notes.push(hit(&mut ids, KICK)); }
-        if i % 4 == 2 { notes.push(hit(&mut ids, SNARE)); }
+        if i % 4 == 0 {
+            notes.push(hit(&mut ids, KICK));
+        }
+        if i % 4 == 2 {
+            notes.push(hit(&mut ids, SNARE));
+        }
         beats.push(beat(&mut ids, Rhythm::new(NoteValue::Eighth), notes));
     }
     bars.push(bar(&mut ids, "Neutral", beats));
@@ -231,8 +358,12 @@ pub fn drum_patterns() -> Document {
     let mut beats = Vec::new();
     for i in 0..16 {
         let mut notes = vec![hit(&mut ids, KICK)];
-        if i % 4 == 0 { notes.push(hit(&mut ids, RIDE)); }
-        if i == 8 { notes.push(hit(&mut ids, SNARE)); }
+        if i % 4 == 0 {
+            notes.push(hit(&mut ids, RIDE));
+        }
+        if i == 8 {
+            notes.push(hit(&mut ids, SNARE));
+        }
         beats.push(beat(&mut ids, Rhythm::new(NoteValue::Sixteenth), notes));
     }
     bars.push(bar(&mut ids, "Neutral", beats));
@@ -251,7 +382,12 @@ pub fn drum_patterns() -> Document {
     // fill: snare into toms, then a crash
     let mut beats = Vec::new();
     for i in 0..16 {
-        let v = match i / 4 { 0 => SNARE, 1 => TOM_HIGH, 2 => TOM_FLOOR, _ => SNARE };
+        let v = match i / 4 {
+            0 => SNARE,
+            1 => TOM_HIGH,
+            2 => TOM_FLOOR,
+            _ => SNARE,
+        };
         let n = hit(&mut ids, v);
         beats.push(beat(&mut ids, Rhythm::new(NoteValue::Sixteenth), vec![n]));
     }
@@ -262,7 +398,13 @@ pub fn drum_patterns() -> Document {
     beats.push(beat(&mut ids, Rhythm::new(NoteValue::Whole), vec![c, k]));
     bars.push(bar(&mut ids, "Neutral", beats));
 
-    let drums = Track { id: 0, name: "drums".into(), color: Some((0, 0, 255)), tuning: vec![], midi_program: Some(0) };
+    let drums = Track {
+        id: 0,
+        name: "drums".into(),
+        color: Some((0, 0, 255)),
+        tuning: vec![],
+        midi_program: Some(0),
+    };
     let n = bars.len();
     assemble("drum patterns", vec![drums], bars, vec![(4, 4); n], vec![])
 }
@@ -275,7 +417,11 @@ pub fn meters_and_sections() -> Document {
     let mut bars = Vec::new();
     for (num, den) in meters {
         let count = num as usize;
-        let value = if den == 8 { NoteValue::Eighth } else { NoteValue::Quarter };
+        let value = if den == 8 {
+            NoteValue::Eighth
+        } else {
+            NoteValue::Quarter
+        };
         let beats = (0..count)
             .map(|_| {
                 let n = fretted(&mut ids, 6, 3, &tun, vec![]);
@@ -301,13 +447,25 @@ pub fn bass_line() -> Document {
     for root in [0, 5, 7, 3] {
         let beats = (0..8)
             .map(|i| {
-                let n = fretted(&mut ids, 4, root + if i % 4 == 3 { 2 } else { 0 }, &tun, vec![]);
+                let n = fretted(
+                    &mut ids,
+                    4,
+                    root + if i % 4 == 3 { 2 } else { 0 },
+                    &tun,
+                    vec![],
+                );
                 beat(&mut ids, Rhythm::new(NoteValue::Eighth), vec![n])
             })
             .collect();
         bars.push(bar(&mut ids, "F4", beats));
     }
-    let track = Track { id: 0, name: "bass".into(), color: Some((0, 255, 0)), tuning: tun.to_vec(), midi_program: Some(33) };
+    let track = Track {
+        id: 0,
+        name: "bass".into(),
+        color: Some((0, 255, 0)),
+        tuning: tun.to_vec(),
+        midi_program: Some(33),
+    };
     let n = bars.len();
     assemble("bass", vec![track], bars, vec![(4, 4); n], vec![])
 }
