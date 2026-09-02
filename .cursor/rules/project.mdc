@@ -1,0 +1,19 @@
+---
+description: Project conventions for tabslib
+alwaysApply: true
+---
+
+Architecture, Rust guidelines, testing layout and the branch/PR workflow live in
+`AGENTS.md` at the repository root. It is the single source of truth. Read it
+before making changes.
+
+Easy to get wrong, covered there in full:
+
+- Work in a git worktree under `.agent/worktrees/`, never the primary checkout.
+- Tests are co-located in sibling `_test.rs` files, never inline
+  `#[cfg(test)] mod tests` blocks.
+- No test reads a file from disk — `tabslib::fixtures` generates what tests need.
+- Every test must assert something that changes when the feature under test is
+  silently dropped. A note count does not.
+- `main` is protected: changes land through a PR that closes an issue and passes
+  the full gate (`just check`).

@@ -1,0 +1,19 @@
+name: Bug
+description: Something reads, writes or converts incorrectly
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened
+      description: What did you observe, and what did you expect instead?
+    validations: { required: true }
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      description: >
+        Ideally a fixture from `tabslib::fixtures`, or code that builds the
+        document. Please do not attach copyrighted Guitar Pro files.
+    validations: { required: true }
+  - type: input
+    attributes:
+      label: Version

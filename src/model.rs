@@ -16,17 +16,26 @@
 /// Pro itself writes -- a writer that emits `Sixteenth` produces a file Guitar
 /// Pro will not read back the same way.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// A written note value, before dots and tuplets are applied.
 pub enum NoteValue {
+    /// Whole note.
     Whole,
+    /// Half note.
     Half,
+    /// Quarter note.
     Quarter,
+    /// Eighth note.
     Eighth,
+    /// Sixteenth note. Spelled `16th` in the file.
     Sixteenth,
+    /// Thirty-second note. Spelled `32nd` in the file.
     ThirtySecond,
+    /// Sixty-fourth note. Spelled `64th` in the file.
     SixtyFourth,
 }
 
 impl NoteValue {
+    /// Parses a GPIF note value, accepting both spellings (`16th`, `Sixteenth`).
     pub fn parse(s: &str) -> Option<Self> {
         Some(match s {
             "Whole" => Self::Whole,
@@ -67,16 +76,27 @@ impl NoteValue {
 
 /// A written rhythm: value, augmentation dots, and an optional tuplet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// A complete written rhythm: value, augmentation dots and tuplet.
+///
+/// Kept as three separate fields rather than one duration so that no value is
+/// ever approximated. [`Rhythm::as_fraction`] does exact integer arithmetic.
 pub struct Rhythm {
+    /// The written note value.
     pub value: NoteValue,
+    /// Augmentation dots; each adds half of the running value.
     pub dots: u8,
     /// `(num, den)` -- three in the time of two is `(3, 2)`.
     pub tuplet: Option<(u32, u32)>,
 }
 
 impl Rhythm {
+    /// A plain rhythm: no dots, no tuplet.
     pub fn new(value: NoteValue) -> Self {
-        Self { value, dots: 0, tuplet: None }
+        Self {
+            value,
+            dots: 0,
+            tuplet: None,
+        }
     }
     /// Exact duration in whole notes, as a fraction. No floating point.
     pub fn as_fraction(&self) -> (u64, u64) {
@@ -98,91 +118,210 @@ impl Rhythm {
 }
 
 fn gcd(a: u64, b: u64) -> u64 {
-    if b == 0 { a.max(1) } else { gcd(b, a % b) }
+    if b == 0 {
+        a.max(1)
+    } else {
+        gcd(b, a % b)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum HarmonicKind { Natural, Artificial, Pinch, Tap, Semi, Feedback }
+/// Which kind of harmonic a note sounds.
+pub enum HarmonicKind {
+    /// Sounded by touching a node of the open string.
+    Natural,
+    /// Fretted, with the harmonic node touched by the picking hand.
+    Artificial,
+    /// Squealed with the edge of the thumb while picking.
+    Pinch,
+    /// Sounded by tapping the node.
+    Tap,
+    /// Half-harmonic, partially damped.
+    Semi,
+    /// Sustained by amplifier feedback.
+    Feedback,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// A playing technique attached to a note.
+///
+/// The set is closed and matches are exhaustive on purpose: adding a variant
+/// must break the build at every site that writes one, so a new technique
+/// cannot be silently dropped on save.
 pub enum Technique {
+    /// Damped with the picking-hand palm at the bridge.
     PalmMute,
+    /// Fretting hand muted; a pitchless click.
     Dead,
+    /// Played louder than its neighbours.
     Accent,
+    /// Played much quieter than its neighbours.
     Ghost,
+    /// Shortened, detached from what follows.
     Staccato,
+    /// Allowed to sustain past its written value.
     LetRing,
+    /// Pitch oscillated by the fretting hand.
     Vibrato,
+    /// Sounded by tapping the fret rather than picking.
     Tapped,
+    /// Start of a hammer-on or pull-off; the next note on this string is slurred.
     HammerOrigin,
+    /// End of a hammer-on or pull-off.
     HammerDestination,
-    Slide { flags: u32 },
-    Bend { origin: i32, middle: i32, dest: i32 },
-    Harmonic { kind: HarmonicKind, fret: Option<i32> },
+    /// Slid to or from another fret.
+    ///
+    /// `flags` is the file's own bitfield: direction and kind are encoded
+    /// together, so it is carried verbatim rather than interpreted.
+    Slide {
+        /// Raw GPIF slide bitfield.
+        flags: u32,
+    },
+    /// Pitch bent by the fretting hand, as a three-point curve.
+    Bend {
+        /// Bend amount at the start of the note.
+        origin: i32,
+        /// Bend amount at the midpoint.
+        middle: i32,
+        /// Bend amount at the end.
+        dest: i32,
+    },
+    /// Sounded as a harmonic.
+    Harmonic {
+        /// Which kind of harmonic.
+        kind: HarmonicKind,
+        /// Node fret, for artificial and tapped harmonics.
+        fret: Option<i32>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// One sounding note.
 pub struct Note {
+    /// Identity within the document.
     pub id: u32,
+    /// Sounding MIDI pitch, where the file states one.
     pub midi: Option<i32>,
+    /// String number, counted from the highest-pitched string.
     pub string: Option<u32>,
+    /// Fret number; 0 is the open string.
     pub fret: Option<i32>,
     /// Percussion instrument identity where the staff is a drum kit.
     pub articulation: Option<i32>,
+    /// Playing techniques applied to this note.
     pub techniques: Vec<Technique>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// One rhythmic position, sounding zero or more notes together.
 pub struct Beat {
+    /// Identity within the document.
     pub id: u32,
+    /// How long this beat lasts.
     pub rhythm: Rhythm,
+    /// Notes sounding together here; empty is a rest.
     pub notes: Vec<Note>,
+    /// Written dynamic, such as `MF`.
     pub dynamic: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Voice { pub id: u32, pub beats: Vec<Beat> }
+/// An independent rhythmic line within a bar.
+pub struct Voice {
+    /// Identity within the document.
+    pub id: u32,
+    /// Beats in playing order.
+    pub beats: Vec<Beat>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Bar { pub id: u32, pub clef: Option<String>, pub voices: Vec<Voice> }
+/// One bar of one track.
+pub struct Bar {
+    /// Identity within the document; referenced from [`MasterBar::bar_ids`].
+    pub id: u32,
+    /// Clef, as GPIF spells it (`G2`, `F4`, `Neutral`).
+    pub clef: Option<String>,
+    /// Independent rhythmic lines in this bar.
+    pub voices: Vec<Voice>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
+/// Score-wide properties of a bar position: meter, section marker, barline.
 pub struct MasterBar {
+    /// Position in the score, from zero.
     pub index: usize,
+    /// Time signature as `(numerator, denominator)`.
     pub time: (u32, u32),
+    /// Section marker starting at this bar, if any.
     pub section: Option<String>,
+    /// Whether a double barline is drawn here.
     pub double_bar: bool,
+    /// One [`Bar`] id per track, in track order.
     pub bar_ids: Vec<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
+/// One instrument part.
 pub struct Track {
+    /// Identity within the document.
     pub id: u32,
+    /// Track name as shown in the editor.
     pub name: String,
+    /// Display colour as RGB.
     pub color: Option<(u8, u8, u8)>,
+    /// Open-string MIDI pitches, lowest string first. Empty for percussion.
     pub tuning: Vec<i32>,
+    /// General MIDI program number.
     pub midi_program: Option<i32>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
+/// A whole score.
+///
+/// Nodes reference each other by id; there are no parent or sibling pointers,
+/// so the document stays a tree and edits stay value-shaped.
 pub struct Document {
+    /// Score title.
     pub title: String,
+    /// Score artist.
     pub artist: String,
+    /// Instrument parts.
     pub tracks: Vec<Track>,
+    /// Score-wide bar properties, in order.
     pub master_bars: Vec<MasterBar>,
     /// Indexed by `Bar` id, matching the `<Bars>` table in the file.
     pub bars: Vec<Bar>,
 }
 
 impl Document {
+    /// Total sounding notes across every track.
     pub fn note_count(&self) -> usize {
-        self.bars.iter().flat_map(|b| &b.voices).flat_map(|v| &v.beats).map(|b| b.notes.len()).sum()
+        self.bars
+            .iter()
+            .flat_map(|b| &b.voices)
+            .flat_map(|v| &v.beats)
+            .map(|b| b.notes.len())
+            .sum()
     }
+    /// Number of bars carrying a section marker.
     pub fn section_count(&self) -> usize {
-        self.master_bars.iter().filter(|m| m.section.is_some()).count()
+        self.master_bars
+            .iter()
+            .filter(|m| m.section.is_some())
+            .count()
     }
+    /// Counts notes whose techniques match `want`.
+    ///
+    /// A census like this is the assertion that catches a codec silently
+    /// dropping an articulation; a note count would not move.
     pub fn technique_count(&self, want: fn(&Technique) -> bool) -> usize {
-        self.bars.iter().flat_map(|b| &b.voices).flat_map(|v| &v.beats)
-            .flat_map(|b| &b.notes).flat_map(|n| &n.techniques).filter(|t| want(t)).count()
+        self.bars
+            .iter()
+            .flat_map(|b| &b.voices)
+            .flat_map(|v| &v.beats)
+            .flat_map(|b| &b.notes)
+            .flat_map(|n| &n.techniques)
+            .filter(|t| want(t))
+            .count()
     }
 }

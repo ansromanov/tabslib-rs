@@ -1,0 +1,16 @@
+name: Feature
+description: A capability the crate should have
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: What it should do
+    validations: { required: true }
+  - type: textarea
+    attributes:
+      label: Scope check
+      description: >
+        Can this be specified without naming a genre, a band, or a statistic
+        measured over a collection of music? If not, it belongs in a downstream
+        crate rather than here.
+    validations: { required: true }
