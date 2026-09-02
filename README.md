@@ -1,5 +1,10 @@
 # tabslib
 
+[![CI](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-github.io-blue)](https://ansromanov.github.io/tabslib-rs/)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+![MSRV](https://img.shields.io/badge/rust-1.85%2B-orange)
+
 A Guitar Pro score engine in Rust: GP7/8 container and GPIF codec over an
 owned, immutable document model.
 
@@ -85,6 +90,15 @@ exact shape of a real defect, where note count stays correct and every triplet
 becomes a quarter — fails two of them.
 
 `fixtures` is public, so downstream crates can use the same documents.
+
+## Contributing
+
+Conventions — architecture, Rust guidelines, testing layout and the PR workflow
+— are in [AGENTS.md](AGENTS.md), written for both people and agents. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+`main` is protected; every change lands through a pull request that passes
+format, clippy, tests, documentation and an MSRV check.
 
 ## License
 
