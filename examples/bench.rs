@@ -23,6 +23,10 @@ fn main() {
 
     println!(
         "  load {:>6.1} ms   save {:>6.1} ms   walk200 {:>5.1} ms   notes {}   out {} bytes",
-        load_ms, save_ms, walk_ms, n / 200, out.len()
+        load_ms,
+        save_ms,
+        walk_ms,
+        n / 200,
+        out.len()
     );
 }

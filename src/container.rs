@@ -1,10 +1,11 @@
 //! GP7/GP8 container: a zip whose payload is `Content/score.gpif`.
 
-use std::io::{Cursor, Read, Write};
 use crate::error::{Error, Result};
+use std::io::{Cursor, Read, Write};
 
 const GPIF_PATH: &str = "Content/score.gpif";
 
+/// Extracts the GPIF payload from GP7/8 container bytes.
 pub fn read_gpif(bytes: &[u8]) -> Result<String> {
     let mut zip = zip::ZipArchive::new(Cursor::new(bytes))?;
     let names: Vec<String> = (0..zip.len())

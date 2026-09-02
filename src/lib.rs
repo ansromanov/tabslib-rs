@@ -5,11 +5,14 @@
 //! library. The model and codec are designed from the file format, not
 //! translated from another implementation.
 
-pub mod error;
-pub mod model;
+#![warn(missing_docs)]
+#![warn(clippy::all)]
+
 pub mod container;
-pub mod gpif;
+pub mod error;
 pub mod fixtures;
+pub mod gpif;
+pub mod model;
 
 pub use error::{Error, Result};
 pub use model::Document;

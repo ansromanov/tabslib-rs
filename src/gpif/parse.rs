@@ -3,7 +3,9 @@ use crate::error::{Error, Result};
 use crate::model::*;
 
 fn ids(text: &str) -> Vec<i32> {
-    text.split_whitespace().filter_map(|s| s.parse().ok()).collect()
+    text.split_whitespace()
+        .filter_map(|s| s.parse().ok())
+        .collect()
 }
 fn num(el: Option<&Element>) -> Option<i32> {
     el.and_then(|e| e.text.trim().parse().ok())
@@ -23,30 +25,62 @@ fn rhythm_table(root: &Element) -> Vec<(u32, Rhythm)> {
             let dots = r
                 .child("AugmentationDot")
                 .and_then(|d| d.attr("count").and_then(|c| c.parse().ok()))
-                .unwrap_or(if r.child("AugmentationDot").is_some() { 1 } else { 0 });
-            let tuplet = r.child("PrimaryTuplet").and_then(|t| {
-                Some((t.attr("num")?.parse().ok()?, t.attr("den")?.parse().ok()?))
-            });
-            Some((id, Rhythm { value, dots, tuplet }))
+                .unwrap_or(if r.child("AugmentationDot").is_some() {
+                    1
+                } else {
+                    0
+                });
+            let tuplet = r
+                .child("PrimaryTuplet")
+                .and_then(|t| Some((t.attr("num")?.parse().ok()?, t.attr("den")?.parse().ok()?)));
+            Some((
+                id,
+                Rhythm {
+                    value,
+                    dots,
+                    tuplet,
+                },
+            ))
         })
         .collect()
 }
 
 fn techniques_of(note: &Element) -> Vec<Technique> {
     let mut out = Vec::new();
-    if note.has_property("PalmMuted") { out.push(Technique::PalmMute); }
-    if note.has_property("Muted") { out.push(Technique::Dead); }
-    if note.has_property("Tapped") { out.push(Technique::Tapped); }
-    if note.has_property("HopoOrigin") { out.push(Technique::HammerOrigin); }
-    if note.has_property("HopoDestination") { out.push(Technique::HammerDestination); }
-    if note.has_property("LetRing") { out.push(Technique::LetRing); }
-    if note.child("Vibrato").is_some() { out.push(Technique::Vibrato); }
+    if note.has_property("PalmMuted") {
+        out.push(Technique::PalmMute);
+    }
+    if note.has_property("Muted") {
+        out.push(Technique::Dead);
+    }
+    if note.has_property("Tapped") {
+        out.push(Technique::Tapped);
+    }
+    if note.has_property("HopoOrigin") {
+        out.push(Technique::HammerOrigin);
+    }
+    if note.has_property("HopoDestination") {
+        out.push(Technique::HammerDestination);
+    }
+    if note.has_property("LetRing") {
+        out.push(Technique::LetRing);
+    }
+    if note.child("Vibrato").is_some() {
+        out.push(Technique::Vibrato);
+    }
     if let Some(p) = note.property("Slide") {
-        let flags = p.child_text("Flags").and_then(|f| f.parse().ok()).unwrap_or(0);
+        let flags = p
+            .child_text("Flags")
+            .and_then(|f| f.parse().ok())
+            .unwrap_or(0);
         out.push(Technique::Slide { flags });
     }
     if note.has_property("Bended") || note.has_property("Bend") {
-        let g = |n: &str| note.property(n).and_then(|p| num(p.children.first())).unwrap_or(0);
+        let g = |n: &str| {
+            note.property(n)
+                .and_then(|p| num(p.children.first()))
+                .unwrap_or(0)
+        };
         out.push(Technique::Bend {
             origin: g("BendOriginValue"),
             middle: g("BendMiddleValue"),
@@ -62,12 +96,15 @@ fn techniques_of(note: &Element) -> Vec<Technique> {
             "Feedback" => HarmonicKind::Feedback,
             _ => HarmonicKind::Natural,
         };
-        let fret = note.property("HarmonicFret").and_then(|f| num(f.children.first()));
+        let fret = note
+            .property("HarmonicFret")
+            .and_then(|f| num(f.children.first()));
         out.push(Technique::Harmonic { kind, fret });
     }
     out
 }
 
+/// Parses a GPIF payload into a [`Document`].
 pub fn parse(xml: &str) -> Result<Document> {
     let root = parse_xml(xml)?;
     if root.name != "GPIF" {
@@ -75,12 +112,23 @@ pub fn parse(xml: &str) -> Result<Document> {
     }
     let score = root.child("Score");
     let mut doc = Document {
-        title: score.and_then(|s| s.child_text("Title")).unwrap_or_default().to_string(),
-        artist: score.and_then(|s| s.child_text("Artist")).unwrap_or_default().to_string(),
+        title: score
+            .and_then(|s| s.child_text("Title"))
+            .unwrap_or_default()
+            .to_string(),
+        artist: score
+            .and_then(|s| s.child_text("Artist"))
+            .unwrap_or_default()
+            .to_string(),
         ..Default::default()
     };
 
-    for (i, t) in root.child("Tracks").into_iter().flat_map(|t| t.children_named("Track")).enumerate() {
+    for (i, t) in root
+        .child("Tracks")
+        .into_iter()
+        .flat_map(|t| t.children_named("Track"))
+        .enumerate()
+    {
         let color = t.child_text("Color").and_then(|c| {
             let v = ids(c);
             (v.len() >= 3).then(|| (v[0] as u8, v[1] as u8, v[2] as u8))
@@ -88,18 +136,31 @@ pub fn parse(xml: &str) -> Result<Document> {
         let tuning = t
             .children_named("Staves")
             .flat_map(|s| s.children_named("Staff"))
-            .find_map(|s| s.property("Tuning").and_then(|p| p.child_text("Pitches").map(ids)))
+            .find_map(|s| {
+                s.property("Tuning")
+                    .and_then(|p| p.child_text("Pitches").map(ids))
+            })
             .unwrap_or_default();
         doc.tracks.push(Track {
-            id: t.attr("id").and_then(|a| a.parse().ok()).unwrap_or(i as u32),
+            id: t
+                .attr("id")
+                .and_then(|a| a.parse().ok())
+                .unwrap_or(i as u32),
             name: t.child_text("Name").unwrap_or_default().to_string(),
             color,
             tuning,
-            midi_program: t.child("MidiConnection").and_then(|m| num(m.child("Program"))),
+            midi_program: t
+                .child("MidiConnection")
+                .and_then(|m| num(m.child("Program"))),
         });
     }
 
-    for (i, m) in root.child("MasterBars").into_iter().flat_map(|m| m.children_named("MasterBar")).enumerate() {
+    for (i, m) in root
+        .child("MasterBars")
+        .into_iter()
+        .flat_map(|m| m.children_named("MasterBar"))
+        .enumerate()
+    {
         let time = m
             .child_text("Time")
             .and_then(|t| {
@@ -110,7 +171,10 @@ pub fn parse(xml: &str) -> Result<Document> {
         doc.master_bars.push(MasterBar {
             index: i,
             time,
-            section: m.child("Section").and_then(|s| s.child_text("Text")).map(str::to_string),
+            section: m
+                .child("Section")
+                .and_then(|s| s.child_text("Text"))
+                .map(str::to_string),
             double_bar: m.child("DoubleBar").is_some(),
             bar_ids: m.child_text("Bars").map(ids).unwrap_or_default(),
         });
@@ -118,17 +182,27 @@ pub fn parse(xml: &str) -> Result<Document> {
 
     let rhythms = rhythm_table(&root);
 
-    let beat_els: Vec<&Element> =
-        root.child("Beats").into_iter().flat_map(|b| b.children_named("Beat")).collect();
-    let note_els: Vec<&Element> =
-        root.child("Notes").into_iter().flat_map(|n| n.children_named("Note")).collect();
-    let voice_els: Vec<&Element> =
-        root.child("Voices").into_iter().flat_map(|v| v.children_named("Voice")).collect();
+    let beat_els: Vec<&Element> = root
+        .child("Beats")
+        .into_iter()
+        .flat_map(|b| b.children_named("Beat"))
+        .collect();
+    let note_els: Vec<&Element> = root
+        .child("Notes")
+        .into_iter()
+        .flat_map(|n| n.children_named("Note"))
+        .collect();
+    let voice_els: Vec<&Element> = root
+        .child("Voices")
+        .into_iter()
+        .flat_map(|v| v.children_named("Voice"))
+        .collect();
 
     // Index by id once. A linear scan per reference is O(n^2) and on an
     // 8000-note score that is the whole parse time.
     fn index(els: &[&Element]) -> std::collections::HashMap<i32, usize> {
-        els.iter().enumerate()
+        els.iter()
+            .enumerate()
             .filter_map(|(i, e)| Some((e.attr("id")?.parse::<i32>().ok()?, i)))
             .collect()
     }
@@ -142,7 +216,10 @@ pub fn parse(xml: &str) -> Result<Document> {
         Some(Note {
             id: id as u32,
             midi: n.property("Midi").and_then(|p| num(p.child("Number"))),
-            string: n.property("String").and_then(|p| num(p.child("String"))).map(|v| v as u32),
+            string: n
+                .property("String")
+                .and_then(|p| num(p.child("String")))
+                .map(|v| v as u32),
             fret: n.property("Fret").and_then(|p| num(p.child("Fret"))),
             articulation: num(n.child("InstrumentArticulation")),
             techniques: techniques_of(n),
@@ -153,8 +230,17 @@ pub fn parse(xml: &str) -> Result<Document> {
         let r = b.child("Rhythm")?.attr("ref")?.parse::<u32>().ok()?;
         Some(Beat {
             id: id as u32,
-            rhythm: rhythm_ix.get(&r).copied().unwrap_or(Rhythm::new(NoteValue::Quarter)),
-            notes: b.child_text("Notes").map(ids).unwrap_or_default().into_iter().filter_map(build_note).collect(),
+            rhythm: rhythm_ix
+                .get(&r)
+                .copied()
+                .unwrap_or(Rhythm::new(NoteValue::Quarter)),
+            notes: b
+                .child_text("Notes")
+                .map(ids)
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(build_note)
+                .collect(),
             dynamic: b.child_text("Dynamic").map(str::to_string),
         })
     };
@@ -162,16 +248,32 @@ pub fn parse(xml: &str) -> Result<Document> {
         let v = voice_els[*voice_ix.get(&id)?];
         Some(Voice {
             id: id as u32,
-            beats: v.child_text("Beats").map(ids).unwrap_or_default().into_iter().filter_map(build_beat).collect(),
+            beats: v
+                .child_text("Beats")
+                .map(ids)
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(build_beat)
+                .collect(),
         })
     };
 
-    for b in root.child("Bars").into_iter().flat_map(|b| b.children_named("Bar")) {
+    for b in root
+        .child("Bars")
+        .into_iter()
+        .flat_map(|b| b.children_named("Bar"))
+    {
         doc.bars.push(Bar {
             id: b.attr("id").and_then(|a| a.parse().ok()).unwrap_or(0),
             clef: b.child_text("Clef").map(str::to_string),
-            voices: b.child_text("Voices").map(ids).unwrap_or_default()
-                .into_iter().filter(|v| *v >= 0).filter_map(build_voice).collect(),
+            voices: b
+                .child_text("Voices")
+                .map(ids)
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|v| *v >= 0)
+                .filter_map(build_voice)
+                .collect(),
         });
     }
     Ok(doc)

@@ -3,30 +3,44 @@
 //! explicit -- which matters here, because several GPIF features live in
 //! `<Property name="...">` attributes rather than element names.
 
+use crate::error::Result;
 use quick_xml::events::Event;
 use quick_xml::Reader;
-use crate::error::Result;
 
 #[derive(Debug, Default, Clone)]
+/// One XML element, with its attributes, text and children.
 pub struct Element {
+    /// Tag name.
     pub name: String,
+    /// Attributes in document order.
     pub attrs: Vec<(String, String)>,
+    /// Concatenated text and CDATA content.
     pub text: String,
+    /// Child elements in document order.
     pub children: Vec<Element>,
 }
 
 impl Element {
+    /// Attribute value by name.
     pub fn attr(&self, key: &str) -> Option<&str> {
-        self.attrs.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
+        self.attrs
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.as_str())
     }
+    /// First child with this tag name.
     pub fn child(&self, name: &str) -> Option<&Element> {
         self.children.iter().find(|c| c.name == name)
     }
+    /// Every child with this tag name.
     pub fn children_named<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a Element> {
         self.children.iter().filter(move |c| c.name == name)
     }
+    /// Trimmed text of the first child with this tag name, if non-empty.
     pub fn child_text(&self, name: &str) -> Option<&str> {
-        self.child(name).map(|c| c.text.trim()).filter(|t| !t.is_empty())
+        self.child(name)
+            .map(|c| c.text.trim())
+            .filter(|t| !t.is_empty())
     }
     /// A GPIF `<Property name="X">` lookup. The previous engine matched element
     /// names here and so could never see palm mutes, slides or bends at all.
@@ -36,15 +50,20 @@ impl Element {
             .flat_map(|p| p.children_named("Property"))
             .find(|p| p.attr("name") == Some(name))
     }
+    /// Whether a `<Property name="...">` is present.
     pub fn has_property(&self, name: &str) -> bool {
         self.property(name).is_some()
     }
 }
 
+/// Parses a GPIF document into a tree rooted at `<GPIF>`.
 pub fn parse_xml(xml: &str) -> Result<Element> {
     let mut reader = Reader::from_str(xml);
     reader.config_mut().trim_text(false);
-    let mut stack: Vec<Element> = vec![Element { name: "#root".into(), ..Default::default() }];
+    let mut stack: Vec<Element> = vec![Element {
+        name: "#root".into(),
+        ..Default::default()
+    }];
     loop {
         match reader.read_event()? {
             Event::Start(e) => {
@@ -94,5 +113,9 @@ pub fn parse_xml(xml: &str) -> Result<Element> {
         }
     }
     let root = stack.pop().unwrap();
-    Ok(root.children.into_iter().find(|c| c.name == "GPIF").unwrap_or_default())
+    Ok(root
+        .children
+        .into_iter()
+        .find(|c| c.name == "GPIF")
+        .unwrap_or_default())
 }

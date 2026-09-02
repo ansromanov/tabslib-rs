@@ -1,0 +1,92 @@
+name: CI
+
+# The gate every pull request must pass. `main` is protected and takes no
+# direct pushes, so this is the only path into the branch.
+on:
+  pull_request:
+    branches: [main]
+    # `edited` so fixing the PR body re-runs the issue-link check
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  link:
+    name: PR closes an issue
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a closing keyword
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          if echo "$LABELS" | tr ',' '\n' | grep -qx 'no-issue'; then
+            echo "no-issue label present, skipping."; exit 0
+          fi
+          if echo "$BODY" | grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) +#[0-9]+'; then
+            echo "PR links an issue."; exit 0
+          fi
+          echo "::error::PR body must close an issue (e.g. 'Closes #12'), or carry the 'no-issue' label."
+          exit 1
+
+  test:
+    name: fmt, clippy, test, docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Test
+        run: cargo test --all-features
+
+      - name: Docs build clean
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps --all-features
+
+      # The crate must be usable by someone who has no Guitar Pro files at all.
+      # A test that reads from disk breaks that and is a merge blocker.
+      - name: No test reads a file
+        run: |
+          if grep -rnE 'std::fs::(read|File::open)|include_bytes!' tests/ src/ \
+             --include='*_test.rs' --include='tests/*.rs' 2>/dev/null; then
+            echo "::error::Tests must not read files. Use tabslib::fixtures."
+            exit 1
+          fi
+          echo "No file reads in tests."
+
+      - name: No content-policy violations
+        run: |
+          if git ls-files | grep -iE '\.(gp|gp3|gp4|gp5|gpx|mid|midi|wav|mp3|flac)$'; then
+            echo "::error::Music files must not be committed. See CONTENT-POLICY.md."
+            exit 1
+          fi
+          echo "No music files committed."
+
+  msrv:
+    name: Minimum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read rust-version from Cargo.toml
+        id: msrv
+        run: echo "v=$(grep -m1 '^rust-version' Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.v }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --all-features
