@@ -2,7 +2,7 @@
 name = "tabslib"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.85"
 description = "Independent Guitar Pro score engine: GP7/8 codec and an immutable document model."
 license = "MIT"
 repository = "https://github.com/ansromanov/tabslib-rs"
