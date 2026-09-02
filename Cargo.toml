@@ -1,0 +1,20 @@
+[package]
+name = "tabslib"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Independent Guitar Pro score engine: GP7/8 codec and an immutable document model."
+license = "MIT"
+repository = "https://github.com/ansromanov/tabslib-rs"
+keywords = ["guitar-pro", "tablature", "music", "gp7", "notation"]
+categories = ["parser-implementations", "multimedia::audio"]
+
+[dependencies]
+quick-xml = "0.36"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+thiserror = "1"
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
