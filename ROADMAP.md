@@ -107,5 +107,3 @@ this one.
 Older binary container versions are not planned. The originating application
 converts them, and four binary decoders is a large surface to own for files that
 can be converted once.
-
-<!-- probe -->
