@@ -1,0 +1,26 @@
+name: Auto-merge
+
+# Turns on auto-merge for every pull request, so one lands the moment its checks
+# go green instead of waiting for a button. The branch ruleset still decides
+# what green means -- this only records the intent to merge and cannot bypass a
+# failing check.
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable:
+    name: Enable auto-merge
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr merge "$PR" --repo "${{ github.repository }}" --squash --auto --delete-branch \
+            || echo "::notice::Auto-merge not enabled (already merging, or blocked)."

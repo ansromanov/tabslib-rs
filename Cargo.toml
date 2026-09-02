@@ -3,10 +3,10 @@ name = "tabslib"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
-description = "Independent Guitar Pro score engine: GP7/8 codec and an immutable document model."
+description = "A general-purpose tablature library: an immutable document model for fretted-instrument notation, codecs for the formats that carry it, and deterministic edits."
 license = "MIT"
 repository = "https://github.com/ansromanov/tabslib-rs"
-keywords = ["guitar-pro", "tablature", "music", "gp7", "notation"]
+keywords = ["tablature", "notation", "music", "score", "fretboard"]
 categories = ["parser-implementations", "multimedia::audio"]
 
 [dependencies]

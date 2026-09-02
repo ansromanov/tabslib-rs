@@ -9,7 +9,16 @@ point here and add nothing except what is genuinely specific to that tool.
 
 # 1. Project
 
-A Guitar Pro score engine: read, inspect, edit and write `.gp` files.
+A general-purpose tablature library: read, inspect, edit and write
+fretted-instrument notation. The document model is the product; codecs are how
+it reaches disk; deterministic edits are what callers come for.
+
+It does not decide what to play. Generation, arrangement, style modelling and
+quality scoring live in a separate crate built on this one.
+
+Refer to formats by name only where it describes compatibility. Guitar Pro is
+Arobas Music's trademark and this project is unaffiliated, so it is never the
+subject of a sentence about what this library *is*.
 
 **Scope test** — before adding anything, ask:
 
@@ -28,12 +37,12 @@ src/
   lib.rs           crate root, load/save entry points
   model.rs         the document model
   error.rs         Error and Result
-  container.rs     GP7/8 zip container
+  container.rs     zip container for the .gp family
   gpif/
     mod.rs         codec entry
     dom.rs         minimal read-only XML tree
-    parse.rs       GPIF -> Document
-    write.rs       Document -> GPIF
+    parse.rs       XML payload -> Document
+    write.rs       Document -> XML payload
   fixtures.rs      generated test documents (public)
 tests/             integration tests
 examples/          runnable examples, including bench
@@ -48,7 +57,7 @@ These are the ones the format punishes. Do not regress them.
   table over `f64` needs a fallback, and that fallback silently rewrites the
   music — a missed value turns a triplet into a quarter note while the note
   count stays correct, so nothing downstream notices.
-- **Several techniques live in XML attributes, not element names.** GPIF writes
+- **Several techniques live in XML attributes, not element names.** The payload writes
   `<Property name="PalmMuted">`. Match on element names and a file full of palm
   mutes reads as having none. Use `Element::property()`.
 - **Rhythms are referenced, not inlined.** `<Rhythm ref="N"/>` against
@@ -97,7 +106,7 @@ These are the ones the format punishes. Do not regress them.
 - **Bounds-checked access.** `.get(i)` for any index not provably in range.
 - **Parse defensively, write exactly.** The reader tolerates variation in the
   input (`16th` and `Sixteenth` both parse). The writer emits exactly one form:
-  the one Guitar Pro itself writes.
+  the one the originating application produces.
 - **No `as` casts that can truncate** where the value is data. Use `try_into()`
   and handle the failure.
 

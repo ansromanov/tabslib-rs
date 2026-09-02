@@ -4,7 +4,7 @@ This repository is public. Two categories of material must never enter it.
 
 ## No third-party musical content
 
-No Guitar Pro files, MIDI, audio, or transcriptions of music the repository
+No score files, MIDI, audio, or transcriptions of music the repository
 owner did not write. This includes material **derived** from a collection of
 such files: extracted vocabularies, statistical priors, manifests, fingerprints
 and calibration snapshots.
