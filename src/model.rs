@@ -275,6 +275,24 @@ pub struct Track {
     pub midi_program: Option<i32>,
 }
 
+/// A tempo change effective at the beginning of a master bar.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TempoChange {
+    /// Zero-based master-bar index.
+    pub at_bar: usize,
+    /// Beats per minute.
+    pub bpm: f64,
+}
+
+/// A score key signature, represented by tonic pitch class and mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KeySignature {
+    /// Tonic pitch class, where C is 0 and C sharp is 1.
+    pub tonic: i8,
+    /// Whether the key is minor rather than major.
+    pub minor: bool,
+}
+
 #[derive(Debug, Clone, Default, PartialEq)]
 /// A whole score.
 ///
@@ -291,6 +309,10 @@ pub struct Document {
     pub master_bars: Vec<MasterBar>,
     /// Indexed by `Bar` id, matching the `<Bars>` table in the file.
     pub bars: Vec<Bar>,
+    /// Tempo changes in score order.
+    pub tempo_map: Vec<TempoChange>,
+    /// Initial key signature, when present in the source.
+    pub key: Option<KeySignature>,
 }
 
 impl Document {
