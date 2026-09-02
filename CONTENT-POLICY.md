@@ -5,12 +5,14 @@ This repository is public. Two categories of material must never enter it.
 ## No third-party musical content
 
 No Guitar Pro files, MIDI, audio, or transcriptions of music the repository
-owner did not write. This includes material **derived** from such files:
-extracted vocabularies, statistical priors, manifests, fingerprints, and
-calibration snapshots computed over a third-party corpus.
+owner did not write. This includes material **derived** from a collection of
+such files: extracted vocabularies, statistical priors, manifests, fingerprints
+and calibration snapshots.
 
-Tests must not depend on any particular file. They are written as invariants
-over whatever corpus is supplied at run time, and skip when none is.
+Tests must not depend on any file at all. `src/fixtures.rs` generates the
+documents they need from generic instrumental material — scales, repeated
+frets, power chords, note values, standard drum patterns. Nothing transcribed
+from a recording.
 
 ## No copyrighted reference texts
 
