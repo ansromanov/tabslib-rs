@@ -6,6 +6,7 @@
 //! translated from another implementation.
 
 pub mod container;
+pub mod edits;
 pub mod error;
 pub mod fixtures;
 pub mod gpif;
