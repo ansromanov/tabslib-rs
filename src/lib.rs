@@ -9,6 +9,7 @@ pub mod error;
 pub mod model;
 pub mod container;
 pub mod gpif;
+pub mod fixtures;
 
 pub use error::{Error, Result};
 pub use model::Document;

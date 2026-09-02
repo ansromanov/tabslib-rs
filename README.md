@@ -62,20 +62,29 @@ links, so ownership stays a tree and edits stay value-shaped.
 ## Testing
 
 ```sh
-cargo test                                   # unit tests
-TABSLIB_CORPUS=/path/to/gp/files cargo test  # plus round-trip tests over real files
+cargo test
 cargo run --release --example bench -- song.gp
 ```
 
-The corpus tests walk whatever `.gp` files they find and assert **invariants**
-— that a load/save/reload changes nothing measurable — rather than hardcoded
-numbers, so they work against any collection. They skip when `TABSLIB_CORPUS`
-is unset, and no Guitar Pro files are committed to this repository.
+No files are needed and none are committed. `tabslib::fixtures` generates test
+documents in code from generic instrumental material — every note value plain,
+dotted, triplet and quintuplet; repeated frets; a two-octave scale run; power
+chords; one bar per technique; standard drum patterns (straight beat, double
+kick, blast, fill); six time signatures with section markers; a bass line.
+
+The tests assert **invariants**: save, reload, and check that the duration
+histogram, the technique census and every string/fret position are unchanged.
 
 **Rule for new tests:** state what the test would report if the feature under
 test were silently dropped. If the answer is "pass", the test is wrong. Note
 count, title and track count all stay correct while rhythm and articulation are
 being destroyed, so none of them is sufficient on its own.
+
+These tests are mutation-checked. Removing tuplet output from the writer — the
+exact shape of a real defect, where note count stays correct and every triplet
+becomes a quarter — fails two of them.
+
+`fixtures` is public, so downstream crates can use the same documents.
 
 ## License
 
