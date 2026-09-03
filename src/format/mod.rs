@@ -65,6 +65,9 @@ pub fn read_any(bytes: &[u8]) -> Result<Document> {
     if <gp::Gp as ReadFormat>::detect(bytes) {
         return <gp::Gp as ReadFormat>::read(bytes);
     }
+    if <midi::Midi as ReadFormat>::detect(bytes) {
+        return <midi::Midi as ReadFormat>::read(bytes);
+    }
     let _ = bytes;
     Err(crate::Error::UnknownFormat)
 }
