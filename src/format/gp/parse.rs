@@ -161,13 +161,26 @@ pub(crate) fn parse(xml: &str) -> Result<Document> {
         .flat_map(|m| m.children_named("MasterBar"))
         .enumerate()
     {
-        let time = m
-            .child_text("Time")
-            .and_then(|t| {
-                let (a, b) = t.split_once('/')?;
-                Some((a.trim().parse().ok()?, b.trim().parse().ok()?))
-            })
-            .unwrap_or((4, 4));
+        let time = match m.child_text("Time") {
+            Some(text) => {
+                let (numerator, denominator) = text
+                    .split_once('/')
+                    .ok_or_else(|| Error::Malformed("invalid time signature".into()))?;
+                let numerator = numerator
+                    .trim()
+                    .parse::<u32>()
+                    .map_err(|_| Error::Malformed("invalid time numerator".into()))?;
+                let denominator = denominator
+                    .trim()
+                    .parse::<u32>()
+                    .map_err(|_| Error::Malformed("invalid time denominator".into()))?;
+                if numerator == 0 || denominator == 0 {
+                    return Err(Error::Malformed("time signature must be non-zero".into()));
+                }
+                (numerator, denominator)
+            }
+            None => (4, 4),
+        };
         doc.master_bars.push(MasterBar {
             index: i,
             time,

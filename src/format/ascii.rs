@@ -69,7 +69,6 @@ fn render_lines(doc: &Document, track: usize, start: usize, end: usize) -> Resul
         vec![None]
     } else {
         (1..=track_data.tuning.len() as u32)
-            .rev()
             .map(Some)
             .collect::<Vec<_>>()
     };

@@ -9,7 +9,7 @@ fn fixture_ascii_is_stable_and_golden() {
     let rendered = render_track(&doc, 0, 0, 0).unwrap();
     assert_eq!(
         rendered,
-        "gtr [1..=1]\ns6| 5   5   5   5   5   5   5   5  |\ns5| -   -   -   -   -   -   -   -  |\ns4| -   -   -   -   -   -   -   -  |\ns3| -   -   -   -   -   -   -   -  |\ns2| -   -   -   -   -   -   -   -  |\ns1| -   -   -   -   -   -   -   -  |"
+        "gtr [1..=1]\ns1| -   -   -   -   -   -   -   -  |\ns2| -   -   -   -   -   -   -   -  |\ns3| -   -   -   -   -   -   -   -  |\ns4| -   -   -   -   -   -   -   -  |\ns5| -   -   -   -   -   -   -   -  |\ns6| 5   5   5   5   5   5   5   5  |"
     );
     let one_bar = edits::slice(&doc, 0, 0).unwrap();
     assert_eq!(
