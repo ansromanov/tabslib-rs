@@ -4,7 +4,7 @@ use crate::model::{Document, Rhythm};
 use std::collections::BTreeMap;
 
 /// An exact non-negative rational number.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Fraction {
     /// Numerator in lowest terms.
     pub numerator: u64,
@@ -27,6 +27,18 @@ impl Fraction {
             self.numerator * other.denominator + other.numerator * self.denominator,
             self.denominator * other.denominator,
         )
+    }
+}
+
+impl PartialOrd for Fraction {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Fraction {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        (self.numerator * other.denominator).cmp(&(other.numerator * self.denominator))
     }
 }
 fn gcd(a: u64, b: u64) -> u64 {

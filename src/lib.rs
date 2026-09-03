@@ -13,6 +13,7 @@ pub mod gpif;
 pub mod inspect;
 pub mod model;
 pub mod pitch;
+pub mod selection;
 
 pub use error::{Error, Result};
 pub use model::Document;
