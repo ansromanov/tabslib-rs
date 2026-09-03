@@ -11,6 +11,7 @@ pub mod fixtures;
 pub mod format;
 pub mod inspect;
 pub mod model;
+pub mod percussion;
 pub mod pitch;
 pub mod selection;
 

@@ -17,8 +17,8 @@
                    format
         ReadFormat  /   \  WriteFormat
                    /     \
-          gp, midi      ascii, musicxml, wav
-          (read/write)       (write)
+          gp, midi, musicxml  ascii, wav
+             (read/write)     (write)
 ```
 
 One direction of dependency: adapters depend on the model, never the reverse.
@@ -34,9 +34,10 @@ separate capabilities.
 | adapter | reads | writes | round-trips |
 | --- | :-: | :-: | :-: |
 | `gp` | yes | yes | **yes** |
-| `ascii` | later | yes | no |
-| `html` | no | yes | no |
-| `pdf` | no | yes | no |
+| `midi` | yes | yes | **yes** |
+| `musicxml` | yes | yes | **yes** |
+| `ascii` | no | yes | no |
+| `wav` | no | yes | no |
 
 A rendering is lossy by construction: an ASCII tab or a PDF is a *view* of a
 score, not a container for one. Under one combined trait each rendering would
@@ -92,11 +93,11 @@ the round-trip invariants automatically apply to it.
 
 ```toml
 default = ["gp", "ascii"]
-gp      = ["dep:zip", "dep:quick-xml"]
-ascii   = []
-midi    = []
-musicxml = []
-wav     = []
+gp       = ["dep:zip", "dep:quick-xml"]
+ascii    = []
+midi     = []
+musicxml = ["dep:quick-xml"]
+wav      = []
 ```
 
 Adapters are feature-gated so their dependencies are opt-in. A consumer that
@@ -105,10 +106,17 @@ only reads `.gp` should not compile a PDF writer.
 
 `--no-default-features` leaves the model, inspection, edits and fixtures, with
 `thiserror` as the only dependency. Every adapter module is opt-in through its
-feature; `gp` additionally retains the original container and GPIF payload on
-read so an unedited load/save can return it byte-for-byte. Model-owned scalar
-note changes are patched into that retained payload; structural changes fall
-back to deterministic regeneration.
+feature. The `gp` adapter retains the original container entries and GPIF
+payload on read so an unedited load/save can return it byte-for-byte;
+model-owned scalar note changes are patched into that retained payload, while
+structural changes fall back to deterministic regeneration. The MIDI and
+MusicXML adapters provide read/write conversion; `ascii` and `wav` are
+write-only views.
+
+The model also carries format-neutral mixer state, ties, repeat navigation,
+alternate endings, and broad percussion roles. GPIF and MusicXML adapters map
+their respective representations into those fields; playback-oriented
+inspection and MIDI export use repeat order when it is present.
 
 ## What is deliberately not here
 

@@ -11,6 +11,25 @@ fn num(el: Option<&Element>) -> Option<i32> {
     el.and_then(|e| e.text.trim().parse().ok())
 }
 
+fn channel_value(track: &Element, index: usize) -> Option<i32> {
+    track
+        .child("ChannelStrip")
+        .and_then(|strip| strip.child("Parameters"))
+        .and_then(|parameters| {
+            parameters
+                .text
+                .split_whitespace()
+                .filter_map(|value| value.parse::<i32>().ok())
+                .nth(index)
+        })
+}
+
+fn channel_flag(track: &Element, name: &str) -> bool {
+    track
+        .child("ChannelStrip")
+        .is_some_and(|strip| strip.child(name).is_some())
+}
+
 /// `<Rhythms><Rhythm id="N">` -- keyed by id, referenced from beats as
 /// `<Rhythm ref="N"/>`. Writing the index as element text instead produces a
 /// file neither Guitar Pro nor a correct reader can resolve, and every note
@@ -64,6 +83,17 @@ fn techniques_of(note: &Element) -> Vec<Technique> {
     }
     if note.has_property("LetRing") {
         out.push(Technique::LetRing);
+    }
+    if let Some(tie) = note
+        .child("Tie")
+        .or_else(|| note.child("Properties").and_then(|p| p.child("Tie")))
+    {
+        if tie.attr("origin") == Some("true") || tie.child("Origin").is_some() {
+            out.push(Technique::TieOrigin);
+        }
+        if tie.attr("destination") == Some("true") || tie.child("Destination").is_some() {
+            out.push(Technique::TieDestination);
+        }
     }
     if note.child("Vibrato").is_some() {
         out.push(Technique::Vibrato);
@@ -152,6 +182,10 @@ pub(crate) fn parse(xml: &str) -> Result<Document> {
             midi_program: t
                 .child("MidiConnection")
                 .and_then(|m| num(m.child("Program"))),
+            pan: channel_value(t, 11),
+            volume: channel_value(t, 12),
+            mute: channel_flag(t, "Mute"),
+            solo: channel_flag(t, "Solo"),
         });
     }
 
@@ -190,6 +224,19 @@ pub(crate) fn parse(xml: &str) -> Result<Document> {
                 .map(str::to_string),
             double_bar: m.child("DoubleBar").is_some(),
             bar_ids: m.child_text("Bars").map(ids).unwrap_or_default(),
+            repeat_start: m
+                .child("Repeat")
+                .and_then(|r| r.attr("start"))
+                .is_some_and(|value| value == "true"),
+            repeat_end: m.child("Repeat").and_then(|r| {
+                let is_end = r.attr("end") == Some("true") || r.attr("count").is_some();
+                is_end.then(|| r.attr("count").and_then(|c| c.parse().ok()).unwrap_or(2))
+            }),
+            alternate_ending: m
+                .child("Alternative")
+                .and_then(|a| a.attr("mask").and_then(|v| v.parse().ok()))
+                .unwrap_or(0),
+            direction: m.child_text("Direction").map(str::to_string),
         });
     }
 

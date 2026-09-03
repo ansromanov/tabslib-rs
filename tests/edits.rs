@@ -12,6 +12,10 @@ fn extra_track(name: &str) -> Track {
         color: None,
         tuning: fixtures::TUNING_E_STANDARD.to_vec(),
         midi_program: Some(30),
+        pan: None,
+        volume: None,
+        mute: false,
+        solo: false,
     }
 }
 

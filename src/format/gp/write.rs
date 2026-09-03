@@ -62,6 +62,8 @@ pub(crate) fn write(doc: &Document) -> String {
                             Technique::HammerOrigin => "<Property name=\"HopoOrigin\"><Enable/></Property>".to_string(),
                             Technique::HammerDestination => "<Property name=\"HopoDestination\"><Enable/></Property>".to_string(),
                             Technique::LetRing => "<Property name=\"LetRing\"><Enable/></Property>".to_string(),
+                            Technique::TieOrigin => "<Tie origin=\"true\"/>".to_string(),
+                            Technique::TieDestination => "<Tie destination=\"true\"/>".to_string(),
                             Technique::Slide { flags } => format!("<Property name=\"Slide\"><Flags>{flags}</Flags></Property>"),
                             Technique::Bend { origin, middle, dest } => format!(
                                 "<Property name=\"Bended\"><Enable/></Property>\
@@ -173,9 +175,17 @@ pub(crate) fn write(doc: &Document) -> String {
                 })
                 .unwrap_or_default();
             let db = if m.double_bar { "<DoubleBar/>" } else { "" };
+            let repeat = if m.repeat_start || m.repeat_end.is_some() {
+                let start = if m.repeat_start { " start=\"true\"" } else { "" };
+                let end = if m.repeat_end.is_some() { " end=\"true\"" } else { "" };
+                let count = m.repeat_end.map(|n| format!(" count=\"{n}\"")).unwrap_or_default();
+                format!("<Repeat{start}{end}{count}/>")
+            } else { String::new() };
+            let alternative = if m.alternate_ending != 0 { format!("<Alternative mask=\"{}\"/>", m.alternate_ending) } else { String::new() };
+            let direction = m.direction.as_deref().map(|d| format!("<Direction>{}</Direction>", cdata(d))).unwrap_or_default();
             let refs: Vec<String> = m.bar_ids.iter().map(|i| i.to_string()).collect();
             format!(
-                "<MasterBar><Time>{}/{}</Time>{sec}{db}<Bars>{}</Bars></MasterBar>",
+                "<MasterBar><Time>{}/{}</Time>{sec}{db}{repeat}{alternative}{direction}<Bars>{}</Bars></MasterBar>",
                 m.time.0,
                 m.time.1,
                 refs.join(" ")
@@ -190,7 +200,15 @@ pub(crate) fn write(doc: &Document) -> String {
                 t.tuning.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(" "))
         };
         let prog = t.midi_program.map(|p| format!("<MidiConnection><Program>{p}</Program></MidiConnection>")).unwrap_or_default();
-        format!("<Track id=\"{}\"><Name>{}</Name>{color}<Staves><Staff>{tuning}</Staff></Staves>{prog}</Track>",
+        let channel = if t.pan.is_some() || t.volume.is_some() || t.mute || t.solo {
+            let mut params = vec!["0".to_string(); 13];
+            if let Some(pan) = t.pan { params[11] = pan.to_string(); }
+            if let Some(volume) = t.volume { params[12] = volume.to_string(); }
+            let mute = if t.mute { "<Mute/>" } else { "" };
+            let solo = if t.solo { "<Solo/>" } else { "" };
+            format!("<ChannelStrip><Parameters>{}</Parameters>{mute}{solo}</ChannelStrip>", params.join(" "))
+        } else { String::new() };
+        format!("<Track id=\"{}\"><Name>{}</Name>{color}<Staves><Staff>{tuning}</Staff></Staves>{prog}{channel}</Track>",
             t.id, cdata(&t.name))
     }).collect();
 

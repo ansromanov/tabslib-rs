@@ -132,6 +132,10 @@ fn assemble(
                 .enumerate()
                 .map(|(t, _)| (t * per + i) as i32)
                 .collect(),
+            repeat_start: false,
+            repeat_end: None,
+            alternate_ending: 0,
+            direction: None,
         })
         .collect();
     Document {
@@ -153,6 +157,10 @@ fn guitar(name: &str, tuning: &[i32]) -> Track {
         color: Some((255, 0, 0)),
         tuning: tuning.to_vec(),
         midi_program: Some(30),
+        pan: None,
+        volume: None,
+        mute: false,
+        solo: false,
     }
 }
 
@@ -405,6 +413,10 @@ pub fn drum_patterns() -> Document {
         color: Some((0, 0, 255)),
         tuning: vec![],
         midi_program: None,
+        pan: None,
+        volume: None,
+        mute: false,
+        solo: false,
     };
     let n = bars.len();
     assemble("drum patterns", vec![drums], bars, vec![(4, 4); n], vec![])
@@ -466,6 +478,10 @@ pub fn bass_line() -> Document {
         color: Some((0, 255, 0)),
         tuning: tun.to_vec(),
         midi_program: Some(33),
+        pan: None,
+        volume: None,
+        mute: false,
+        solo: false,
     };
     let n = bars.len();
     assemble("bass", vec![track], bars, vec![(4, 4); n], vec![])

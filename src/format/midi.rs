@@ -43,14 +43,21 @@ pub fn write(doc: &Document) -> Vec<u8> {
     for (track_index, _track) in doc.tracks.iter().enumerate() {
         let mut absolute = Vec::new();
         let mut cursor = 0;
-        for master in &doc.master_bars {
+        for master_index in crate::inspect::playback_order(doc) {
+            let master = &doc.master_bars[master_index];
             let bar_id = *master.bar_ids.get(track_index).unwrap_or(&-1);
             if let Some(bar) = doc.bars.iter().find(|bar| bar.id == bar_id as u32) {
                 if let Some(voice) = bar.voices.first() {
                     for beat in &voice.beats {
                         let duration = ticks(beat.rhythm);
                         for note in &beat.notes {
-                            if let Some(midi) = note.midi.filter(|n| (0..=127).contains(n)) {
+                            let midi = note
+                                .articulation
+                                .and_then(crate::percussion::midi_note)
+                                .map(i32::from)
+                                .or(note.midi)
+                                .filter(|n| (0..=127).contains(n));
+                            if let Some(midi) = midi {
                                 absolute.push((cursor, 0x90, midi as u8, 100));
                                 absolute.push((cursor + duration, 0x80, midi as u8, 0));
                             }
@@ -219,6 +226,10 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
             color: None,
             tuning: vec![40, 45, 50, 55, 59, 64],
             midi_program: None,
+            pan: None,
+            volume: None,
+            mute: false,
+            solo: false,
         }],
         master_bars: (0..bars)
             .map(|i| MasterBar {
@@ -227,6 +238,10 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
                 section: None,
                 double_bar: false,
                 bar_ids: vec![bar_ids[i]],
+                repeat_start: false,
+                repeat_end: None,
+                alternate_ending: 0,
+                direction: None,
             })
             .collect(),
         bars: bar_values,
