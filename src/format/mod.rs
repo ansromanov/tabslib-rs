@@ -25,6 +25,8 @@ use crate::model::Document;
 #[cfg(feature = "gp")]
 pub mod gp;
 
+pub mod ascii;
+
 /// A format that can be parsed into a [`Document`].
 pub trait ReadFormat {
     /// Short identifier, used in errors and diagnostics.
