@@ -12,7 +12,7 @@
 //! | adapter | [`ReadFormat`] | [`WriteFormat`] |
 //! | --- | :-: | :-: |
 //! | [`gp`] | yes | yes |
-//! | ascii, musicxml, html, pdf | no | yes |
+//! | ascii, wav | no | yes |
 //! | midi | yes | yes |
 //!
 //! A single trait would force a rendering to supply a `read` that fails at run

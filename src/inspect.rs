@@ -58,6 +58,24 @@ fn gcd(a: u64, b: u64) -> u64 {
 pub fn bar_capacity(meter: (u32, u32)) -> Fraction {
     Fraction::new(meter.0 as u64, meter.1 as u64)
 }
+
+/// Returns master-bar indices in playback order, expanding simple repeats.
+pub fn playback_order(doc: &Document) -> Vec<usize> {
+    let mut order = Vec::new();
+    let mut repeat_start = 0;
+    for (index, master) in doc.master_bars.iter().enumerate() {
+        if master.repeat_start {
+            repeat_start = index;
+        }
+        order.push(index);
+        if let Some(count) = master.repeat_end {
+            for _ in 1..count.max(1) {
+                order.extend(repeat_start..=index);
+            }
+        }
+    }
+    order
+}
 /// Exact duration of a written rhythm, measured in whole notes.
 pub fn rhythm_duration(rhythm: Rhythm) -> Fraction {
     let (n, d) = rhythm.as_fraction();
@@ -331,11 +349,10 @@ pub fn bar_integrity(doc: &Document) -> Vec<BarIntegrity> {
 }
 /// Builds a complete structural summary.
 pub fn summary(doc: &Document) -> ScoreSummary {
-    let duration = doc
-        .master_bars
-        .iter()
-        .fold(Fraction::new(0, 1), |sum, bar| {
-            sum.plus(bar_capacity(bar.time))
+    let duration = playback_order(doc)
+        .into_iter()
+        .fold(Fraction::new(0, 1), |sum, index| {
+            sum.plus(bar_capacity(doc.master_bars[index].time))
         });
     ScoreSummary {
         tracks: doc

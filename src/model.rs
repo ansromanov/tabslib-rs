@@ -138,6 +138,10 @@ pub enum Technique {
     Staccato,
     /// Allowed to sustain past its written value.
     LetRing,
+    /// Sustains into the following note or bar.
+    TieOrigin,
+    /// Continues a tie from the preceding note or bar.
+    TieDestination,
     /// Pitch oscillated by the fretting hand.
     Vibrato,
     /// Sounded by tapping the fret rather than picking.
@@ -235,6 +239,14 @@ pub struct MasterBar {
     pub double_bar: bool,
     /// One [`Bar`] id per track, in track order.
     pub bar_ids: Vec<i32>,
+    /// Starts a repeat section at this bar.
+    pub repeat_start: bool,
+    /// Ends a repeat section; value is the playback count.
+    pub repeat_end: Option<u32>,
+    /// Bit mask of alternate ending numbers (Volta 1 is bit zero).
+    pub alternate_ending: u32,
+    /// Navigation direction such as Da Capo, Coda, Segno, or Fine.
+    pub direction: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -250,6 +262,14 @@ pub struct Track {
     pub tuning: Vec<i32>,
     /// General MIDI program number.
     pub midi_program: Option<i32>,
+    /// Mixer pan in the source format's integer units.
+    pub pan: Option<i32>,
+    /// Mixer volume in the source format's integer units.
+    pub volume: Option<i32>,
+    /// Whether the track is muted.
+    pub mute: bool,
+    /// Whether the track is soloed.
+    pub solo: bool,
 }
 
 /// A tempo change effective at the beginning of a master bar.
@@ -301,6 +321,7 @@ pub(crate) struct SourceState {
     pub container: Vec<u8>,
     pub payload: String,
     pub baseline: String,
+    pub entries: Vec<(String, Vec<u8>)>,
 }
 
 impl Document {

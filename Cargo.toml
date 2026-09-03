@@ -20,7 +20,7 @@ default = ["gp", "ascii"]
 gp = ["dep:zip", "dep:quick-xml"]
 ascii = []
 midi = []
-musicxml = []
+musicxml = ["dep:quick-xml"]
 wav = []
 
 [dev-dependencies]

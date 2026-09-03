@@ -32,12 +32,13 @@ impl ReadFormat for Gp {
     }
 
     fn read(bytes: &[u8]) -> Result<Document> {
-        let payload = container::read_payload(bytes)?;
+        let (payload, entries) = container::read_source(bytes)?;
         let mut doc = parse::parse(&payload)?;
         doc.source = Some(SourceState {
             container: bytes.to_vec(),
             baseline: write::write(&doc),
             payload,
+            entries,
         });
         Ok(doc)
     }
@@ -53,8 +54,11 @@ impl WriteFormat for Gp {
                 return Ok(source.container.clone());
             }
             if let Some(patched) = write::patch_source(doc, &source.payload) {
-                return container::write_payload(&patched);
+                return container::write_payload_with_entries(&patched, &source.entries);
             }
+        }
+        if let Some(source) = &doc.source {
+            return container::write_payload_with_entries(&generated, &source.entries);
         }
         container::write_payload(&generated)
     }
