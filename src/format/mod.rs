@@ -12,7 +12,8 @@
 //! | adapter | [`ReadFormat`] | [`WriteFormat`] |
 //! | --- | :-: | :-: |
 //! | [`gp`] | yes | yes |
-//! | ascii, html, pdf | no | yes |
+//! | ascii, musicxml, html, pdf | no | yes |
+//! | midi | yes | yes |
 //!
 //! A single trait would force a rendering to supply a `read` that fails at run
 //! time, and would invite a round-trip test that cannot pass. Split, the
@@ -26,6 +27,8 @@ use crate::model::Document;
 pub mod gp;
 
 pub mod ascii;
+pub mod midi;
+pub mod musicxml;
 
 /// A format that can be parsed into a [`Document`].
 pub trait ReadFormat {
