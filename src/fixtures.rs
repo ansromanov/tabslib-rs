@@ -403,7 +403,7 @@ pub fn drum_patterns() -> Document {
         name: "drums".into(),
         color: Some((0, 0, 255)),
         tuning: vec![],
-        midi_program: Some(0),
+        midi_program: None,
     };
     let n = bars.len();
     assemble("drum patterns", vec![drums], bars, vec![(4, 4); n], vec![])

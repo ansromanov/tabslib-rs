@@ -14,7 +14,12 @@ pub struct Fraction {
 impl Fraction {
     /// Creates and reduces a fraction.
     pub fn new(numerator: u64, denominator: u64) -> Self {
-        assert!(denominator > 0);
+        if denominator == 0 {
+            return Self {
+                numerator: 0,
+                denominator: 1,
+            };
+        }
         let g = gcd(numerator, denominator);
         Self {
             numerator: numerator / g,
@@ -68,6 +73,8 @@ pub enum BarFeel {
     Triplet,
     /// A swung passage.
     Swung,
+    /// The meter denominator is outside the supported written grid.
+    Unsupported,
 }
 /// A beat's exact location within its bar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -141,10 +148,9 @@ pub fn detect_bar_feel(
     let Some(master) = doc.master_bars.get(bar_index) else {
         return BarFeel::Straight;
     };
-    let capacity = bar_capacity(master.time);
-    if capacity.numerator * 12 % capacity.denominator != 0 {
-        return BarFeel::Straight;
-    };
+    if !matches!(master.time.1, 1 | 2 | 4 | 8 | 16 | 32 | 64) {
+        return BarFeel::Unsupported;
+    }
     let Some(voice) =
         bar_for(doc, bar_index, track_index).and_then(|bar| bar.voices.get(voice_index))
     else {
@@ -164,6 +170,18 @@ pub fn detect_bar_feel(
         .count();
     if triplets * 2 >= sounding.len() {
         BarFeel::Triplet
+    } else if sounding
+        .chunks(2)
+        .filter(|pair| {
+            pair.len() == 2
+                && pair[0].rhythm.as_fraction().0 * pair[1].rhythm.as_fraction().1
+                    == pair[1].rhythm.as_fraction().0 * pair[0].rhythm.as_fraction().1 * 3
+        })
+        .count()
+        * 2
+        >= sounding.len()
+    {
+        BarFeel::Swung
     } else {
         BarFeel::Straight
     }
@@ -238,15 +256,16 @@ pub fn classify_track(doc: &Document, track_index: usize) -> Option<(TrackKind, 
             sounding += 1;
         }
     }
-    let kind = if track.tuning.is_empty() || track.midi_program == Some(0) {
+    let name = track.name.to_ascii_lowercase();
+    let kind = if track.tuning.is_empty() {
         TrackKind::Percussion
-    } else if track.tuning.len() <= 4
-        || track.midi_program.is_some_and(|p| (32..=39).contains(&p))
-        || track.name.to_ascii_lowercase().contains("bass")
-    {
-        TrackKind::Bass
     } else if sounding == 0 {
         TrackKind::Empty
+    } else if track.tuning.len() <= 4
+        || track.midi_program.is_some_and(|p| (32..=39).contains(&p))
+        || name.contains("bass")
+    {
+        TrackKind::Bass
     } else {
         TrackKind::Other
     };
@@ -268,10 +287,13 @@ pub fn note_census(doc: &Document) -> NoteCensus {
                         *result.articulations.entry(a).or_insert(0) += 1;
                     }
                     for technique in &note.techniques {
-                        *result
-                            .techniques
-                            .entry(format!("{technique:?}"))
-                            .or_insert(0) += 1;
+                        let name = match technique {
+                            crate::model::Technique::Slide { .. } => "Slide".to_string(),
+                            crate::model::Technique::Bend { .. } => "Bend".to_string(),
+                            crate::model::Technique::Harmonic { .. } => "Harmonic".to_string(),
+                            _ => format!("{technique:?}"),
+                        };
+                        *result.techniques.entry(name).or_insert(0) += 1;
                     }
                 }
             }
@@ -362,6 +384,9 @@ pub fn parse_key(input: &str) -> Option<crate::model::KeySignature> {
 }
 /// Parses note names with octaves, or the conventional `Drop D` tuning.
 pub fn parse_tuning(input: &str) -> Option<Vec<i32>> {
+    if input.trim().is_empty() {
+        return None;
+    }
     if input.trim().eq_ignore_ascii_case("drop d") {
         return Some(vec![38, 45, 50, 55, 59, 64]);
     }

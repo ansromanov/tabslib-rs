@@ -66,12 +66,20 @@ fn unique_name(doc: &Document, requested: &str, ignored: Option<usize>) -> Strin
 }
 
 /// Creates a bar with one empty voice and a fresh identity.
-pub fn new_bar(doc: &Document, _meter: (u32, u32)) -> Bar {
+pub fn new_bar(doc: &Document) -> Bar {
+    let voice_id = doc
+        .bars
+        .iter()
+        .flat_map(|bar| bar.voices.iter())
+        .map(|voice| voice.id)
+        .max()
+        .unwrap_or(0)
+        .saturating_add(1);
     Bar {
         id: next_id(doc),
         clef: None,
         voices: vec![Voice {
-            id: 0,
+            id: voice_id,
             beats: Vec::new(),
         }],
     }
@@ -171,12 +179,26 @@ pub fn remove_track(doc: &mut Document, track_index: usize) -> Result<Track, Edi
             "cannot remove the last track".into(),
         ));
     }
+    let removed_ids = doc
+        .master_bars
+        .iter()
+        .filter_map(|master| master.bar_ids.get(track_index).copied())
+        .collect::<std::collections::BTreeSet<_>>();
     let removed = doc.tracks.remove(track_index);
     for master in &mut doc.master_bars {
         if track_index < master.bar_ids.len() {
             master.bar_ids.remove(track_index);
         }
     }
+    let remaining = doc
+        .master_bars
+        .iter()
+        .flat_map(|master| master.bar_ids.iter())
+        .copied()
+        .collect::<std::collections::BTreeSet<_>>();
+    doc.bars.retain(|bar| {
+        !removed_ids.contains(&(bar.id as i32)) || remaining.contains(&(bar.id as i32))
+    });
     check(doc)?;
     Ok(removed)
 }
@@ -255,6 +277,7 @@ pub fn splice(
     let mut next = next_id(destination);
     for offset in 0..count {
         destination.master_bars[dest_start + offset] = source_slice.master_bars[offset].clone();
+        destination.master_bars[dest_start + offset].index = dest_start + offset;
         for track in 0..destination.tracks.len() {
             let source_id = source_slice.master_bars[offset].bar_ids[track];
             let copied = source_slice
