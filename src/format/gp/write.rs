@@ -205,3 +205,62 @@ pub(crate) fn write(doc: &Document) -> String {
         cdata(&doc.artist)
     )
 }
+
+fn replace_value(region: &str, property: &str, child: &str, value: &str) -> Option<String> {
+    let marker = format!("<Property name=\"{property}\">");
+    let start = region.find(&marker)? + marker.len();
+    let open = format!("<{child}>");
+    let close = format!("</{child}>");
+    let child_start = region[start..].find(&open)? + start + open.len();
+    let child_end = region[child_start..].find(&close)? + child_start;
+    let mut out = region.to_string();
+    out.replace_range(child_start..child_end, value);
+    Some(out)
+}
+
+/// Patches model-owned scalar note fields into retained GPIF, preserving all
+/// elements the model does not own. Structural edits fall back to regeneration.
+pub(crate) fn patch_source(doc: &Document, source: &str) -> Option<String> {
+    let ids = source
+        .match_indices("<Note id=\"")
+        .filter_map(|(start, _)| {
+            let begin = start + 10;
+            let end = source[begin..].find('\"')? + begin;
+            source[begin..end].parse::<u32>().ok()
+        })
+        .collect::<Vec<_>>();
+    let notes = doc
+        .bars
+        .iter()
+        .flat_map(|bar| bar.voices.iter())
+        .flat_map(|voice| voice.beats.iter())
+        .flat_map(|beat| beat.notes.iter())
+        .collect::<Vec<_>>();
+    if ids.len() != notes.len() {
+        return None;
+    }
+    let mut output = source.to_string();
+    for (id, note) in ids.into_iter().zip(notes) {
+        let marker = format!("<Note id=\"{id}\"");
+        let start = output.find(&marker)?;
+        let end = output[start..].find("</Note>")? + start + "</Note>".len();
+        let mut region = output[start..end].to_string();
+        if let Some(midi) = note.midi {
+            if let Some(next) = replace_value(&region, "Midi", "Number", &midi.to_string()) {
+                region = next;
+            }
+        }
+        if let Some(fret) = note.fret {
+            if let Some(next) = replace_value(&region, "Fret", "Fret", &fret.to_string()) {
+                region = next;
+            }
+        }
+        if let Some(string) = note.string {
+            if let Some(next) = replace_value(&region, "String", "String", &string.to_string()) {
+                region = next;
+            }
+        }
+        output.replace_range(start..end, &region);
+    }
+    Some(output)
+}

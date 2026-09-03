@@ -15,7 +15,7 @@ pub use dom::{parse_xml, Element};
 
 use crate::error::Result;
 use crate::format::{ReadFormat, WriteFormat};
-use crate::model::Document;
+use crate::model::{Document, SourceState};
 
 /// The `.gp` container format, versions 7 and 8.
 #[derive(Debug, Clone, Copy, Default)]
@@ -32,7 +32,14 @@ impl ReadFormat for Gp {
     }
 
     fn read(bytes: &[u8]) -> Result<Document> {
-        parse::parse(&container::read_payload(bytes)?)
+        let payload = container::read_payload(bytes)?;
+        let mut doc = parse::parse(&payload)?;
+        doc.source = Some(SourceState {
+            container: bytes.to_vec(),
+            baseline: write::write(&doc),
+            payload,
+        });
+        Ok(doc)
     }
 }
 
@@ -40,7 +47,16 @@ impl WriteFormat for Gp {
     const NAME: &'static str = "gp";
 
     fn write(doc: &Document) -> Result<Vec<u8>> {
-        container::write_payload(&write::write(doc))
+        let generated = write::write(doc);
+        if let Some(source) = &doc.source {
+            if source.baseline == generated {
+                return Ok(source.container.clone());
+            }
+            if let Some(patched) = write::patch_source(doc, &source.payload) {
+                return container::write_payload(&patched);
+            }
+        }
+        container::write_payload(&generated)
     }
 }
 

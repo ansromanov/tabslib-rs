@@ -26,9 +26,14 @@ use crate::model::Document;
 #[cfg(feature = "gp")]
 pub mod gp;
 
+#[cfg(feature = "ascii")]
 pub mod ascii;
+#[cfg(feature = "midi")]
 pub mod midi;
+#[cfg(feature = "musicxml")]
 pub mod musicxml;
+#[cfg(feature = "wav")]
+pub mod wav;
 
 /// A format that can be parsed into a [`Document`].
 pub trait ReadFormat {
@@ -65,6 +70,7 @@ pub fn read_any(bytes: &[u8]) -> Result<Document> {
     if <gp::Gp as ReadFormat>::detect(bytes) {
         return <gp::Gp as ReadFormat>::read(bytes);
     }
+    #[cfg(feature = "midi")]
     if <midi::Midi as ReadFormat>::detect(bytes) {
         return <midi::Midi as ReadFormat>::read(bytes);
     }

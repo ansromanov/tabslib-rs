@@ -142,6 +142,7 @@ fn assemble(
         bars,
         tempo_map: vec![],
         key: None,
+        source: None,
     }
 }
 

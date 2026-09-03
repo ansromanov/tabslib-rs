@@ -15,9 +15,13 @@ quick-xml = { version = "0.36", optional = true }
 zip = { version = "2", default-features = false, features = ["deflate"], optional = true }
 
 [features]
-default = ["gp"]
+default = ["gp", "ascii"]
 # The .gp container and its XML payload. Reads and writes.
 gp = ["dep:zip", "dep:quick-xml"]
+ascii = []
+midi = []
+musicxml = []
+wav = []
 
 [dev-dependencies]
 

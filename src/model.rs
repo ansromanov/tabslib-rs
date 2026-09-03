@@ -290,6 +290,17 @@ pub struct Document {
     pub tempo_map: Vec<TempoChange>,
     /// Initial key signature, when present in the source.
     pub key: Option<KeySignature>,
+    /// Retained source representation for adapters that can patch in place.
+    #[doc(hidden)]
+    pub(crate) source: Option<SourceState>,
+}
+
+/// Opaque source data retained by a format adapter for loss-preserving writes.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct SourceState {
+    pub container: Vec<u8>,
+    pub payload: String,
+    pub baseline: String,
 }
 
 impl Document {

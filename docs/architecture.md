@@ -17,8 +17,8 @@
                    format
         ReadFormat  /   \  WriteFormat
                    /     \
-                 gp     ascii, html, pdf
-            (both)       (write only)
+          gp, midi      ascii, musicxml, wav
+          (read/write)       (write)
 ```
 
 One direction of dependency: adapters depend on the model, never the reverse.
@@ -91,8 +91,12 @@ the round-trip invariants automatically apply to it.
 ## Features
 
 ```toml
-default = ["gp"]
+default = ["gp", "ascii"]
 gp      = ["dep:zip", "dep:quick-xml"]
+ascii   = []
+midi    = []
+musicxml = []
+wav     = []
 ```
 
 Adapters are feature-gated so their dependencies are opt-in. A consumer that
@@ -100,7 +104,11 @@ only renders ASCII should not compile a zip implementation, and a consumer that
 only reads `.gp` should not compile a PDF writer.
 
 `--no-default-features` leaves the model, inspection, edits and fixtures, with
-`thiserror` as the only dependency.
+`thiserror` as the only dependency. Every adapter module is opt-in through its
+feature; `gp` additionally retains the original container and GPIF payload on
+read so an unedited load/save can return it byte-for-byte. Model-owned scalar
+note changes are patched into that retained payload; structural changes fall
+back to deterministic regeneration.
 
 ## What is deliberately not here
 
