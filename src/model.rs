@@ -17,6 +17,8 @@
 /// Pro will not read back the same way.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// A written note value, before dots and tuplets are applied.
+///
+/// How a value is spelled in a file belongs to that file's adapter, not here.
 pub enum NoteValue {
     /// Whole note.
     Whole,
@@ -35,31 +37,6 @@ pub enum NoteValue {
 }
 
 impl NoteValue {
-    /// Parses a GPIF note value, accepting both spellings (`16th`, `Sixteenth`).
-    pub fn parse(s: &str) -> Option<Self> {
-        Some(match s {
-            "Whole" => Self::Whole,
-            "Half" => Self::Half,
-            "Quarter" => Self::Quarter,
-            "Eighth" => Self::Eighth,
-            "Sixteenth" | "16th" => Self::Sixteenth,
-            "ThirtySecond" | "32nd" => Self::ThirtySecond,
-            "SixtyFourth" | "64th" => Self::SixtyFourth,
-            _ => return None,
-        })
-    }
-    /// The spelling Guitar Pro writes.
-    pub fn as_gpif(self) -> &'static str {
-        match self {
-            Self::Whole => "Whole",
-            Self::Half => "Half",
-            Self::Quarter => "Quarter",
-            Self::Eighth => "Eighth",
-            Self::Sixteenth => "16th",
-            Self::ThirtySecond => "32nd",
-            Self::SixtyFourth => "64th",
-        }
-    }
     /// Denominator of the plain value: Quarter -> 4.
     pub fn denominator(self) -> u32 {
         match self {

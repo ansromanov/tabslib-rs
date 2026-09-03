@@ -34,19 +34,29 @@ the repository at all.
 
 ```
 src/
-  lib.rs           crate root, load/save entry points
-  model.rs         the document model
-  error.rs         Error and Result
-  container.rs     zip container for the .gp family
-  gpif/
-    mod.rs         codec entry
-    dom.rs         minimal read-only XML tree
-    parse.rs       XML payload -> Document
-    write.rs       Document -> XML payload
-  fixtures.rs      generated test documents (public)
+  lib.rs           crate root; load() dispatches to a compiled-in adapter
+  model.rs         the document -- knows no format
+  error.rs         Error and Result; no format-specific variants
+  inspect.rs       \
+  edits.rs          >  operate on the model only
+  selection.rs      |
+  pitch.rs          |
+  fixtures.rs      /   generated test documents (public)
+  format/
+    mod.rs         ReadFormat and WriteFormat
+    gp/            the .gp adapter: container, XML, note-value spellings
 tests/             integration tests
 examples/          runnable examples, including bench
 ```
+
+**Format knowledge lives inside an adapter and nowhere else.** The core builds
+with `--no-default-features` and CI fails if a format library appears in that
+dependency graph. If a change needs a file-format fact in `model`, `inspect` or
+`edits`, the design is wrong -- see `docs/architecture.md`.
+
+Adding a format means implementing one trait and touching no existing adapter.
+`tests/adapter_boundary.rs` does that from outside the crate, and stops
+compiling if the boundary leaks.
 
 ## Key invariants
 
@@ -106,7 +116,8 @@ These are the ones the format punishes. Do not regress them.
 - **Bounds-checked access.** `.get(i)` for any index not provably in range.
 - **Parse defensively, write exactly.** The reader tolerates variation in the
   input (`16th` and `Sixteenth` both parse). The writer emits exactly one form:
-  the one the originating application produces.
+  the one the originating application produces. Both halves belong to the
+  adapter -- the model has no opinion about how a value is spelled.
 - **No `as` casts that can truncate** where the value is data. Use `try_into()`
   and handle the failure.
 

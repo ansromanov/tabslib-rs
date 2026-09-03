@@ -112,6 +112,18 @@ jobs:
             cargo nextest run --all-features -E "$filter"
           fi
 
+      # The core must not depend on any format. If this fails, something in
+      # model/inspect/edits has reached for an adapter.
+      - name: Core builds with no format adapter
+        run: |
+          cargo build --no-default-features
+          if cargo tree --no-default-features -e normal | grep -qE '^\s*[|`-]+ (zip|quick-xml)'; then
+            echo "::error::A format dependency is reachable without its feature."
+            cargo tree --no-default-features -e normal
+            exit 1
+          fi
+          echo "Core is format-independent."
+
       - name: Docs build clean
         env: { RUSTDOCFLAGS: -D warnings }
         run: cargo doc --no-deps --all-features

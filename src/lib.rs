@@ -5,25 +5,33 @@
 //! library. The model and codec are designed from the file format, not
 //! translated from another implementation.
 
-pub mod container;
 pub mod edits;
 pub mod error;
 pub mod fixtures;
-pub mod gpif;
+pub mod format;
 pub mod inspect;
 pub mod model;
 pub mod pitch;
 pub mod selection;
 
 pub use error::{Error, Result};
-pub use model::Document;
+pub use format::{ReadFormat, WriteFormat};
 
-/// Reads a `.gp` file's bytes into a [`Document`].
+/// Reads bytes in any compiled-in format.
+///
+/// For a known format prefer the adapter directly — `Gp::read(bytes)` — which
+/// reports that format's own error rather than "unrecognised".
 pub fn load(bytes: &[u8]) -> Result<Document> {
-    gpif::parse(&container::read_gpif(bytes)?)
+    format::read_any(bytes)
 }
 
-/// Serialises a [`Document`] back to `.gp` container bytes.
+/// Writes a document as `.gp`.
+///
+/// A convenience for the one format that round-trips. Other formats are
+/// renderings and are reached through their adapter:
+/// `<Ascii as WriteFormat>::write(&doc)`.
+#[cfg(feature = "gp")]
 pub fn save(doc: &Document) -> Result<Vec<u8>> {
-    container::write_gpif(&gpif::write(doc))
+    <format::gp::Gp as WriteFormat>::write(doc)
 }
+pub use model::Document;

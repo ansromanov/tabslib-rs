@@ -3,7 +3,7 @@
 //! explicit -- which matters here, because several GPIF features live in
 //! `<Property name="...">` attributes rather than element names.
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use quick_xml::events::Event;
 use quick_xml::Reader;
 
@@ -65,7 +65,7 @@ pub fn parse_xml(xml: &str) -> Result<Element> {
         ..Default::default()
     }];
     loop {
-        match reader.read_event()? {
+        match reader.read_event().map_err(|e| Error::format("gp", e))? {
             Event::Start(e) => {
                 let mut el = Element {
                     name: String::from_utf8_lossy(e.name().as_ref()).into_owned(),

@@ -21,7 +21,7 @@ fn rhythm_table(root: &Element) -> Vec<(u32, Rhythm)> {
         .flat_map(|r| r.children_named("Rhythm"))
         .filter_map(|r| {
             let id: u32 = r.attr("id")?.parse().ok()?;
-            let value = NoteValue::parse(r.child_text("NoteValue")?)?;
+            let value = super::note_value::parse(r.child_text("NoteValue")?)?;
             let dots = r
                 .child("AugmentationDot")
                 .and_then(|d| d.attr("count").and_then(|c| c.parse().ok()))
@@ -105,7 +105,7 @@ fn techniques_of(note: &Element) -> Vec<Technique> {
 }
 
 /// Parses a GPIF payload into a [`Document`].
-pub fn parse(xml: &str) -> Result<Document> {
+pub(crate) fn parse(xml: &str) -> Result<Document> {
     let root = parse_xml(xml)?;
     if root.name != "GPIF" {
         return Err(Error::Malformed("root element is not <GPIF>".into()));

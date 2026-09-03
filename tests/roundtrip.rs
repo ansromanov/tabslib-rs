@@ -178,13 +178,43 @@ fn rhythm_fractions_are_exact() {
     );
 }
 
+/// The spelling is a property of the format, so it is asserted on the bytes the
+/// adapter emits rather than on a method of the model. The model no longer has
+/// an opinion about how a note value is written down.
 #[test]
-fn note_values_use_the_spelling_guitar_pro_writes() {
-    assert_eq!(NoteValue::Sixteenth.as_gpif(), "16th");
-    assert_eq!(NoteValue::ThirtySecond.as_gpif(), "32nd");
-    assert_eq!(NoteValue::Quarter.as_gpif(), "Quarter");
-    assert_eq!(NoteValue::parse("Sixteenth"), Some(NoteValue::Sixteenth));
-    assert_eq!(NoteValue::parse("16th"), Some(NoteValue::Sixteenth));
+fn the_written_payload_uses_the_spelling_the_format_expects() {
+    let payload = tabslib::format::gp::write_payload(&fixtures::all_note_values());
+    assert!(
+        payload.contains("<NoteValue>16th</NoteValue>"),
+        "sixteenths must be written as 16th"
+    );
+    assert!(
+        payload.contains("<NoteValue>32nd</NoteValue>"),
+        "thirty-seconds must be written as 32nd"
+    );
+    assert!(payload.contains("<NoteValue>Quarter</NoteValue>"));
+    assert!(
+        !payload.contains("Sixteenth"),
+        "the long spelling must not reach the file"
+    );
+}
+
+/// Reading is deliberately more tolerant than writing.
+#[test]
+fn both_spellings_are_accepted_on_read() {
+    let doc = fixtures::all_note_values();
+    let payload = tabslib::format::gp::write_payload(&doc);
+    let long = payload.replace(
+        "<NoteValue>16th</NoteValue>",
+        "<NoteValue>Sixteenth</NoteValue>",
+    );
+    let a = tabslib::format::gp::parse_payload(&payload).expect("compact spelling");
+    let b = tabslib::format::gp::parse_payload(&long).expect("long spelling");
+    assert_eq!(
+        durations(&a),
+        durations(&b),
+        "spelling must not change the music"
+    );
 }
 
 #[test]

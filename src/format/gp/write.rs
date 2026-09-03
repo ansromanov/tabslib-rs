@@ -13,7 +13,7 @@ fn cdata(s: &str) -> String {
 }
 
 /// Serialises a [`Document`] to a GPIF payload.
-pub fn write(doc: &Document) -> String {
+pub(crate) fn write(doc: &Document) -> String {
     // one entry per distinct rhythm, addressed by id
     let mut table: Vec<Rhythm> = Vec::new();
     let mut index_of = |r: Rhythm| -> usize {
@@ -150,7 +150,7 @@ pub fn write(doc: &Document) -> String {
                 .unwrap_or_default();
             format!(
                 "<Rhythm id=\"{i}\"><NoteValue>{}</NoteValue>{dot}{tup}</Rhythm>",
-                r.value.as_gpif()
+                super::note_value::spell(r.value)
             )
         })
         .collect();
