@@ -5,7 +5,7 @@ default:
 
 # The full local gate. Runs in seconds; run it rather than reasoning about
 # whether a change was safe.
-check: fmt-check lint test doc
+check: fmt-check lint test doc core-only
 
 fmt:
     cargo fmt --all
@@ -43,6 +43,13 @@ test-pr base="origin/main":
     else
         cargo nextest run --all-features -E "$filter"
     fi
+
+# The core must not depend on any format adapter.
+core-only:
+    cargo build --no-default-features
+    @cargo tree --no-default-features -e normal | grep -qE '^\s*[|`-]+ (zip|quick-xml)' \
+        && (echo "a format dependency is reachable without its feature"; exit 1) \
+        || echo "core is format-independent"
 
 doc:
     RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features

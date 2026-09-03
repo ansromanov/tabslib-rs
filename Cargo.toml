@@ -10,9 +10,14 @@ keywords = ["tablature", "notation", "music", "score", "fretboard"]
 categories = ["parser-implementations", "multimedia::audio"]
 
 [dependencies]
-quick-xml = "0.36"
-zip = { version = "2", default-features = false, features = ["deflate"] }
 thiserror = "1"
+quick-xml = { version = "0.36", optional = true }
+zip = { version = "2", default-features = false, features = ["deflate"], optional = true }
+
+[features]
+default = ["gp"]
+# The .gp container and its XML payload. Reads and writes.
+gp = ["dep:zip", "dep:quick-xml"]
 
 [dev-dependencies]
 

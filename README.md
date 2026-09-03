@@ -18,12 +18,22 @@ style modelling and quality scoring are out of scope by design — see
 
 ## Formats
 
-| format | read | write |
-| --- | :-: | :-: |
-| `.gp` (version 7 and 8 containers) | yes | partial |
-| ASCII tablature | — | planned |
-| MusicXML | planned | planned |
-| MIDI | planned | planned |
+Formats are adapters behind a trait; the core knows nothing about files.
+Reading and writing are separate capabilities, because a rendering is a view of
+a score rather than a container for one.
+
+| adapter | reads | writes | round-trips | feature |
+| --- | :-: | :-: | :-: | --- |
+| `gp` — version 7 and 8 containers | yes | partial | yes | `gp` *(default)* |
+| `ascii` — plain-text tablature | later | planned | no | `ascii` |
+| `html` | no | planned | no | `html` |
+| `pdf` | no | planned | no | `pdf` |
+| `musicxml`, `midi` | planned | planned | yes | — |
+
+`cargo build --no-default-features` gives you the model, inspection and edits
+with no format code and `thiserror` as the only dependency. CI enforces it.
+
+See [docs/architecture.md](docs/architecture.md).
 
 ## Status — 0.1, codec only
 
@@ -45,12 +55,27 @@ modelled subset; do not use it to rewrite a finished arrangement yet.
 ## Usage
 
 ```rust
+use tabslib::{format::gp::Gp, ReadFormat, WriteFormat};
+
 let bytes = std::fs::read("song.gp")?;
+
+// whichever compiled-in adapter recognises the bytes
 let doc = tabslib::load(&bytes)?;
+// or name the format, for a precise error when it is malformed
+let doc = Gp::read(&bytes)?;
 
 println!("{} — {} notes, {} sections", doc.title, doc.note_count(), doc.section_count());
 
-let out = tabslib::save(&doc)?;
+let out = Gp::write(&doc)?;
+```
+
+Adding a format means implementing one trait and touching nothing else:
+
+```rust
+impl WriteFormat for MyRendering {
+    const NAME: &'static str = "myrendering";
+    fn write(doc: &Document) -> Result<Vec<u8>> { /* ... */ }
+}
 ```
 
 ## Scope

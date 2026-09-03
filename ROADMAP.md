@@ -16,9 +16,21 @@ Transposing a track can. "Add a fill where the section changes" cannot.
 
 ---
 
+## Phase 0 — format adapters *(done)*
+
+Formats sit behind `ReadFormat` / `WriteFormat`; the core depends on none of
+them. See [docs/architecture.md](docs/architecture.md).
+
+- [x] `container` and the XML codec moved to `format/gp/`
+- [x] Two traits, so a rendering cannot be mistaken for a container
+- [x] Note-value spellings moved out of the model into the adapter
+- [x] Adapter failures boxed behind `Error::Format`, so `Error` has no
+      format-specific variants
+- [x] Feature flags, with `--no-default-features` proven in CI
+
 ## Phase 1 — codec parity *(in progress)*
 
-The file format, completely, in both directions.
+The `gp` adapter, completely, in both directions.
 
 - [x] Container read and write, deterministic
 - [x] XML payload parse: tracks, tunings, colours, master bars, sections, meters, clefs, bars, voices, beats, rhythms, notes
@@ -83,16 +95,20 @@ what separates them from generation.
 A worked example of the shape: *palm-mute every note on the lowest string
 within these bars*. The user names the target and can predict the result.
 
-## Phase 6 — rendering
+## Phase 6 — rendering adapters
 
-- [ ] ASCII tablature for a track and for a score
-- [ ] Bar-range windows, for comparing two passages side by side
+Write-only, so none of them takes the round-trip invariants.
 
-## Phase 7 — audio and interchange
+- [ ] `ascii` — tablature for a track and for a score, bar-range windows
+- [ ] `html` — a standalone document
+- [ ] `pdf` — print
 
-- [ ] MIDI export
-- [ ] Standard MIDI file import
-- [ ] MusicXML export
+## Phase 7 — interchange and audio
+
+Both round-trip, so both implement the pair of traits.
+
+- [ ] `midi` — read and write
+- [ ] `musicxml` — read and write
 - [ ] PCM render via a soundfont
 
 Sequenced last because none of it is needed to edit a score correctly, and each
