@@ -1,3 +1,5 @@
+#![cfg(feature = "ascii")]
+
 use tabslib::edits;
 use tabslib::fixtures;
 use tabslib::format::ascii::{render_compare, render_track, Ascii};

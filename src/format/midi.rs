@@ -232,6 +232,7 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
         bars: bar_values,
         tempo_map: Vec::new(),
         key: None,
+        source: None,
     })
 }
 

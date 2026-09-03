@@ -1,13 +1,11 @@
-//! Deterministic PCM rendering primitives.
+//! Dependency-free PCM rendering with an external soundfont asset path.
 
 use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::model::Document;
 
-/// Renders a score to mono 16-bit PCM WAV after validating an external
-/// soundfont path. The compact built-in tone is intentionally dependency-free;
-/// callers can use the MIDI export with a soundfont renderer for full voices.
+/// Renders mono 16-bit PCM WAV after validating the caller's soundfont path.
 pub fn render_pcm(doc: &Document, soundfont: impl AsRef<Path>) -> Result<Vec<u8>> {
     if !soundfont.as_ref().is_file() {
         return Err(Error::Malformed("soundfont path is not a file".into()));

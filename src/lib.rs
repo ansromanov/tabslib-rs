@@ -5,7 +5,6 @@
 //! library. The model and codec are designed from the file format, not
 //! translated from another implementation.
 
-pub mod audio;
 pub mod edits;
 pub mod error;
 pub mod fixtures;
