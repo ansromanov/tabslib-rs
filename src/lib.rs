@@ -12,6 +12,7 @@ pub mod fixtures;
 pub mod gpif;
 pub mod inspect;
 pub mod model;
+pub mod pitch;
 
 pub use error::{Error, Result};
 pub use model::Document;
