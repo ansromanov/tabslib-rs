@@ -270,6 +270,8 @@ pub struct Track {
     pub mute: bool,
     /// Whether the track is soloed.
     pub solo: bool,
+    /// Track-local percussion articulation mappings, when present.
+    pub percussion_articulations: Vec<crate::percussion::PercussionArticulation>,
 }
 
 /// A tempo change effective at the beginning of a master bar.

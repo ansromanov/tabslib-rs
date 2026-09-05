@@ -161,6 +161,7 @@ fn guitar(name: &str, tuning: &[i32]) -> Track {
         volume: None,
         mute: false,
         solo: false,
+        percussion_articulations: Vec::new(),
     }
 }
 
@@ -417,6 +418,7 @@ pub fn drum_patterns() -> Document {
         volume: None,
         mute: false,
         solo: false,
+        percussion_articulations: Vec::new(),
     };
     let n = bars.len();
     assemble("drum patterns", vec![drums], bars, vec![(4, 4); n], vec![])
@@ -482,6 +484,7 @@ pub fn bass_line() -> Document {
         volume: None,
         mute: false,
         solo: false,
+        percussion_articulations: Vec::new(),
     };
     let n = bars.len();
     assemble("bass", vec![track], bars, vec![(4, 4); n], vec![])

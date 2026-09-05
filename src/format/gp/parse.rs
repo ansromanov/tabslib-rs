@@ -189,6 +189,7 @@ pub(crate) fn parse(xml: &str) -> Result<Document> {
             volume: channel_value(t, 12),
             mute: channel_flag(t, "Mute"),
             solo: channel_flag(t, "Solo"),
+            percussion_articulations: Vec::new(),
         });
     }
 
@@ -338,6 +339,38 @@ pub(crate) fn parse(xml: &str) -> Result<Document> {
                 .filter_map(build_voice)
                 .collect(),
         });
+    }
+    for (track_index, track) in doc.tracks.iter_mut().enumerate() {
+        if !track.tuning.is_empty() && track.tuning.iter().any(|pitch| *pitch != 0) {
+            continue;
+        }
+        for master in &doc.master_bars {
+            let Some(bar_id) = master.bar_ids.get(track_index).copied() else {
+                continue;
+            };
+            let Some(bar) = doc.bars.iter().find(|bar| bar.id == bar_id as u32) else {
+                continue;
+            };
+            for note in bar
+                .voices
+                .iter()
+                .flat_map(|voice| voice.beats.iter())
+                .flat_map(|beat| beat.notes.iter())
+            {
+                let (Some(raw_id), Some(midi)) = (note.articulation, note.midi) else {
+                    continue;
+                };
+                if !track
+                    .percussion_articulations
+                    .iter()
+                    .any(|mapping| mapping.raw_id == raw_id)
+                {
+                    if let Some(mapping) = crate::percussion::articulation(raw_id, midi) {
+                        track.percussion_articulations.push(mapping);
+                    }
+                }
+            }
+        }
     }
     Ok(doc)
 }

@@ -53,7 +53,14 @@ pub fn write(doc: &Document) -> Vec<u8> {
                         for note in &beat.notes {
                             let midi = note
                                 .articulation
-                                .and_then(crate::percussion::midi_note)
+                                .and_then(|raw| {
+                                    doc.tracks[track_index]
+                                        .percussion_articulations
+                                        .iter()
+                                        .find(|mapping| mapping.raw_id == raw)
+                                        .map(|mapping| mapping.midi)
+                                        .or_else(|| crate::percussion::midi_note(raw))
+                                })
                                 .map(i32::from)
                                 .or(note.midi)
                                 .filter(|n| (0..=127).contains(n));
@@ -230,6 +237,7 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
             volume: None,
             mute: false,
             solo: false,
+            percussion_articulations: Vec::new(),
         }],
         master_bars: (0..bars)
             .map(|i| MasterBar {
