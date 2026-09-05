@@ -6,7 +6,9 @@ use quick_xml::Reader;
 use crate::error::{Error, Result};
 use crate::format::ReadFormat;
 use crate::format::WriteFormat;
-use crate::model::{Bar, Beat, Document, MasterBar, Note, NoteValue, Rhythm, Track, Voice};
+use crate::model::{
+    Bar, Beat, Document, KeySignature, MasterBar, Note, NoteValue, Rhythm, Track, Voice,
+};
 
 /// MusicXML export adapter.
 #[derive(Debug, Clone, Copy, Default)]
@@ -120,6 +122,10 @@ fn rhythm_from_ticks(ticks: u32) -> Rhythm {
     Rhythm::new(value)
 }
 
+fn tonic_from_fifths(fifths: i32) -> i8 {
+    (fifths * 7).rem_euclid(12) as i8
+}
+
 #[derive(Default)]
 struct XmlNote {
     midi: Option<i32>,
@@ -143,6 +149,10 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
     let mut tag = String::new();
     let mut next_id = 0u32;
     let mut time = (4, 4);
+    let mut divisions = 480u32;
+    let mut key_fifths = None;
+    let mut key_minor = false;
+    let mut clef_sign = "G".to_string();
     loop {
         match reader
             .read_event_into(&mut buf)
@@ -193,6 +203,15 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
                     "part-name" => names.push(value),
                     "beats" => time.0 = value.parse().unwrap_or(4),
                     "beat-type" => time.1 = value.parse().unwrap_or(4),
+                    "divisions" => divisions = value.parse().unwrap_or(480),
+                    "fifths" => key_fifths = value.parse().ok(),
+                    "mode" => key_minor = value == "minor",
+                    "sign" => clef_sign = value,
+                    "line" => {
+                        if let Some(bar) = current_bar.as_mut() {
+                            bar.clef = Some(format!("{clef_sign}{value}"));
+                        }
+                    }
                     "step" => {
                         if let Some(note) = current_note.as_mut() {
                             note.midi = Some(match value.as_str() {
@@ -223,7 +242,10 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
                             );
                         }
                     }
-                    "duration" => current_duration = value.parse().unwrap_or(480),
+                    "duration" => {
+                        let raw = value.parse::<u32>().unwrap_or(divisions);
+                        current_duration = raw.saturating_mul(480) / divisions.max(1);
+                    }
                     "string" => {
                         if let Some(note) = current_note.as_mut() {
                             note.string = value.parse().ok();
@@ -330,7 +352,10 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
         master_bars,
         bars,
         tempo_map: Vec::new(),
-        key: None,
+        key: key_fifths.map(|fifths| KeySignature {
+            tonic: tonic_from_fifths(fifths),
+            minor: key_minor,
+        }),
         source: None,
     })
 }
