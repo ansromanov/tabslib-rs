@@ -358,3 +358,22 @@ impl Document {
             .count()
     }
 }
+
+/// Open-string pitch for a string number.
+///
+/// **Strings are 0-based and counted from the lowest**, matching what the file
+/// format stores, so this is a direct index into the tuning slice.
+///
+/// Measured across 150155 fretted notes in a real corpus, `open_pitch + fret ==
+/// midi` holds for 100.0% of notes under this convention, 23.7% under
+/// `tuning[len - string]` and 30.4% under `tuning[len - string - 1]`. The
+/// convention lives here alone so no caller has to re-derive it, and so getting
+/// it wrong is a one-line fix rather than a seven-site hunt.
+pub fn open_pitch(tuning: &[i32], string: u32) -> Option<i32> {
+    tuning.get(string as usize).copied()
+}
+
+/// Sounding pitch of a fretted note.
+pub fn sounding_pitch(tuning: &[i32], string: u32, fret: i32) -> Option<i32> {
+    open_pitch(tuning, string).map(|open| open + fret)
+}

@@ -11,14 +11,43 @@ fn load_dispatches_standard_midi() {
     assert_eq!(loaded.note_count(), fixtures::repeated_frets().note_count());
 }
 
+/// Asserted by pitch rather than by string number.
+///
+/// This previously required `s1` on the top line, which is only correct if
+/// string 1 is the highest -- and it is not: strings are 0-based from the
+/// lowest. The test agreed with the wrong convention and so could not detect
+/// it. Ordering by pitch is true regardless of how strings are numbered.
 #[test]
 fn ascii_places_highest_pitched_string_first() {
+    use tabslib::model::open_pitch;
+
     let doc = fixtures::bass_line();
-    let lines = render_track(&doc, 0, 0, 0).unwrap();
-    let lines = lines.lines().collect::<Vec<_>>();
-    assert!(doc.tracks[0].tuning.last().unwrap() > doc.tracks[0].tuning.first().unwrap());
-    assert!(lines[1].starts_with("s1|"));
-    assert!(lines[4].starts_with("s4|"));
+    let tuning = &doc.tracks[0].tuning;
+    assert!(
+        tuning.last().unwrap() > tuning.first().unwrap(),
+        "tuning is stored lowest-first"
+    );
+
+    let rendered = render_track(&doc, 0, 0, 0).unwrap();
+    let pitches: Vec<i32> = rendered
+        .lines()
+        .filter_map(|line| line.strip_prefix('s'))
+        .filter_map(|rest| rest.split('|').next())
+        .filter_map(|n| n.trim().parse::<u32>().ok())
+        .filter_map(|s| open_pitch(tuning, s))
+        .collect();
+
+    assert_eq!(
+        pitches.len(),
+        tuning.len(),
+        "every string should be rendered"
+    );
+    let mut descending = pitches.clone();
+    descending.sort_unstable_by(|a, b| b.cmp(a));
+    assert_eq!(
+        pitches, descending,
+        "top line must be the highest-pitched string"
+    );
 }
 
 #[test]

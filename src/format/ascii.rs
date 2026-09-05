@@ -65,10 +65,14 @@ fn note_text(note: Option<&Note>) -> String {
 fn render_lines(doc: &Document, track: usize, start: usize, end: usize) -> Result<Vec<String>> {
     let track_data = selected_track(doc, track)?;
     check_range(doc, start, end)?;
+    // Highest-pitched string on the top line, as written tablature is read.
+    // String numbers are 0-based from the *lowest* string, so the display order
+    // is their reverse -- ordering by string number puts the tab upside down.
     let strings = if track_data.tuning.is_empty() {
         vec![None]
     } else {
-        (1..=track_data.tuning.len() as u32)
+        (0..track_data.tuning.len() as u32)
+            .rev()
             .map(Some)
             .collect::<Vec<_>>()
     };

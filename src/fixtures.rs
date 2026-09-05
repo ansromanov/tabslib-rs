@@ -64,7 +64,7 @@ fn fretted(
     tuning: &[i32],
     techniques: Vec<Technique>,
 ) -> Note {
-    let open = tuning[tuning.len() - string as usize];
+    let open = crate::model::open_pitch(tuning, string).expect("string within the tuning");
     Note {
         id: ids.note(),
         midi: Some(open + fret),
@@ -195,7 +195,7 @@ pub fn all_note_values() -> Document {
                 dots,
                 tuplet,
             };
-            let n = fretted(&mut ids, 6, 5, &tun, vec![]);
+            let n = fretted(&mut ids, 0, 5, &tun, vec![]);
             let b = beat(&mut ids, r, vec![n]);
             bars.push(bar(&mut ids, "G2", vec![b]));
         }
@@ -218,7 +218,7 @@ pub fn repeated_frets() -> Document {
     for fret in [5, 7, 8, 12, 0] {
         let beats = (0..8)
             .map(|_| {
-                let n = fretted(&mut ids, 6, fret, &tun, vec![Technique::PalmMute]);
+                let n = fretted(&mut ids, 0, fret, &tun, vec![Technique::PalmMute]);
                 beat(&mut ids, Rhythm::new(NoteValue::Eighth), vec![n])
             })
             .collect();
@@ -248,7 +248,7 @@ pub fn scale_run() -> Document {
             .iter()
             .map(|semi| {
                 // keep it on one string so the fixture is unambiguous
-                let n = fretted(&mut ids, 6, *semi, &tun, vec![]);
+                let n = fretted(&mut ids, 0, *semi, &tun, vec![]);
                 beat(&mut ids, Rhythm::new(NoteValue::Eighth), vec![n])
             })
             .collect();
@@ -274,11 +274,11 @@ pub fn power_chords() -> Document {
         for two_note in [true, false] {
             for _ in 0..2 {
                 let mut notes = vec![
-                    fretted(&mut ids, 6, root, &tun, vec![Technique::PalmMute]),
-                    fretted(&mut ids, 5, root, &tun, vec![Technique::PalmMute]),
+                    fretted(&mut ids, 0, root, &tun, vec![Technique::PalmMute]),
+                    fretted(&mut ids, 1, root, &tun, vec![Technique::PalmMute]),
                 ];
                 if !two_note {
-                    notes.push(fretted(&mut ids, 4, root, &tun, vec![Technique::PalmMute]));
+                    notes.push(fretted(&mut ids, 2, root, &tun, vec![Technique::PalmMute]));
                 }
                 beats.push(beat(&mut ids, Rhythm::new(NoteValue::Quarter), notes));
             }
@@ -328,7 +328,7 @@ pub fn every_technique() -> Document {
     for t in all {
         let beats = (0..4)
             .map(|i| {
-                let n = fretted(&mut ids, 6, 5 + i, &tun, t.clone());
+                let n = fretted(&mut ids, 0, 5 + i, &tun, t.clone());
                 beat(&mut ids, Rhythm::new(NoteValue::Quarter), vec![n])
             })
             .collect();
@@ -439,7 +439,7 @@ pub fn meters_and_sections() -> Document {
         };
         let beats = (0..count)
             .map(|_| {
-                let n = fretted(&mut ids, 6, 3, &tun, vec![]);
+                let n = fretted(&mut ids, 0, 3, &tun, vec![]);
                 beat(&mut ids, Rhythm::new(value), vec![n])
             })
             .collect();
@@ -464,7 +464,7 @@ pub fn bass_line() -> Document {
             .map(|i| {
                 let n = fretted(
                     &mut ids,
-                    4,
+                    0,
                     root + if i % 4 == 3 { 2 } else { 0 },
                     &tun,
                     vec![],
