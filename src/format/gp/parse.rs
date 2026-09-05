@@ -11,23 +11,26 @@ fn num(el: Option<&Element>) -> Option<i32> {
     el.and_then(|e| e.text.trim().parse().ok())
 }
 
-fn channel_value(track: &Element, index: usize) -> Option<i32> {
+fn channel_strip(track: &Element) -> Option<&Element> {
     track
         .child("ChannelStrip")
+        .or_else(|| track.child("RSE").and_then(|rse| rse.child("ChannelStrip")))
+}
+
+fn channel_value(track: &Element, index: usize) -> Option<f64> {
+    channel_strip(track)
         .and_then(|strip| strip.child("Parameters"))
         .and_then(|parameters| {
             parameters
                 .text
                 .split_whitespace()
-                .filter_map(|value| value.parse::<i32>().ok())
+                .filter_map(|value| value.parse::<f64>().ok())
                 .nth(index)
         })
 }
 
 fn channel_flag(track: &Element, name: &str) -> bool {
-    track
-        .child("ChannelStrip")
-        .is_some_and(|strip| strip.child(name).is_some())
+    channel_strip(track).is_some_and(|strip| strip.child(name).is_some())
 }
 
 /// `<Rhythms><Rhythm id="N">` -- keyed by id, referenced from beats as

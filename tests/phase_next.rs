@@ -35,15 +35,15 @@ fn retained_container_entries_survive_a_changed_score() {
 #[test]
 fn mixer_parameters_round_trip_through_gpif() {
     let mut doc = fixtures::repeated_frets();
-    doc.tracks[0].pan = Some(-20);
-    doc.tracks[0].volume = Some(90);
+    doc.tracks[0].pan = Some(0.25);
+    doc.tracks[0].volume = Some(0.75);
     doc.tracks[0].mute = true;
     doc.tracks[0].solo = true;
     let xml = tabslib::format::gp::write_payload(&doc);
     let loaded = tabslib::format::gp::parse_payload(&xml).unwrap();
     let track = &loaded.tracks[0];
-    assert_eq!(track.pan, Some(-20));
-    assert_eq!(track.volume, Some(90));
+    assert_eq!(track.pan, Some(0.25));
+    assert_eq!(track.volume, Some(0.75));
     assert!(track.mute && track.solo);
 }
 

@@ -262,10 +262,10 @@ pub struct Track {
     pub tuning: Vec<i32>,
     /// General MIDI program number.
     pub midi_program: Option<i32>,
-    /// Mixer pan in the source format's integer units.
-    pub pan: Option<i32>,
-    /// Mixer volume in the source format's integer units.
-    pub volume: Option<i32>,
+    /// Mixer pan in the source format's normalized units.
+    pub pan: Option<f64>,
+    /// Mixer volume in the source format's normalized units.
+    pub volume: Option<f64>,
     /// Whether the track is muted.
     pub mute: bool,
     /// Whether the track is soloed.
