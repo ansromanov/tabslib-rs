@@ -58,6 +58,20 @@ Read-only questions about a score, the basis for everything after.
 - [x] Bar integrity: find over- and under-full bars
 - [x] Key and tuning parsing from strings
 
+The existing inspection layer is intentionally descriptive. Key determination
+from score material and additional general statistics are maintenance items for
+the next minor release, not generation features.
+
+## Phase 2a — general score analysis
+
+- [ ] Determine key and mode from chord roots and sounding notes.
+- [ ] Expose pitch, rhythm, density, interval, and technique statistics.
+- [ ] Report confidence and supporting measurements rather than genre labels.
+
+These belong in `tabslib` because they inspect a document without choosing what
+to play. Corpus calibration, style identity, and composition policy belong in
+`tabslib-extras`.
+
 ## Phase 3 — structural edits *(done)*
 
 Changing the shape of a score, with the integrity guards that make it safe.
