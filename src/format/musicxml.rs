@@ -135,6 +135,15 @@ struct XmlNote {
 }
 
 /// Imports the common score-partwise subset emitted by [`MusicXml::write`].
+///
+/// ```
+/// use tabslib::format::musicxml::MusicXml;
+/// use tabslib::format::ReadFormat;
+///
+/// let xml = br#"<?xml version="1.0"?><score-partwise><part-list><score-part id="P1"><part-name>Guitar</part-name></score-part></part-list><part id="P1"><measure number="1"><attributes><divisions>480</divisions><time><beats>4</beats><beat-type>4</beat-type></time></attributes><note><rest/><duration>480</duration><voice>1</voice></note></measure></part></score-partwise>"#;
+/// let score = MusicXml::read(xml).unwrap();
+/// assert_eq!(score.tracks.len(), 1);
+/// ```
 pub fn read(bytes: &[u8]) -> Result<Document> {
     let mut reader = Reader::from_reader(bytes);
     reader.config_mut().trim_text(true);

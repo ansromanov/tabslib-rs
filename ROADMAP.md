@@ -28,7 +28,7 @@ them. See [docs/architecture.md](docs/architecture.md).
       format-specific variants
 - [x] Feature flags, with `--no-default-features` proven in CI
 
-## Phase 1 — codec parity *(in progress)*
+## Phase 1 — codec parity *(done)*
 
 The `gp` adapter, completely, in both directions.
 
@@ -36,80 +36,80 @@ The `gp` adapter, completely, in both directions.
 - [x] XML payload parse: tracks, tunings, colours, master bars, sections, meters, clefs, bars, voices, beats, rhythms, notes
 - [x] Techniques: palm mute, dead, tapped, hammer-on/pull-off, let-ring, vibrato, slide flags, bend values, harmonics
 - [x] Rhythm as exact fractions — values, dots, tuplets
-- [ ] Dynamics per beat
-- [ ] Ties across beats and barlines
-- [ ] Percussion articulation table, not just the index
-- [ ] Track mixer: volume, pan, mute, solo
-- [ ] Repeats, alternate endings, directions
-- [ ] Carry unmodelled container blocks through a save unchanged
-- [ ] **Lossless round-trip**: save and reload changes nothing measurable
+- [x] Dynamics per beat
+- [x] Ties across beats and barlines
+- [x] Percussion articulation table, not just the index
+- [x] Track mixer: volume, pan, mute, solo
+- [x] Repeats, alternate endings, directions
+- [x] Carry unmodelled container blocks through a save unchanged
+- [x] **Lossless round-trip**: save and reload changes nothing measurable
 
 Phase 1 ends when a file survives a round-trip with no measurable difference
 and reopens correctly in the application that wrote it.
 
-## Phase 2 — inspection
+## Phase 2 — inspection *(done)*
 
 Read-only questions about a score, the basis for everything after.
 
-- [ ] Score summary: tracks, duration, meters, tempo map, key, tunings
-- [ ] Timing primitives: bar capacity, beat position, step grids, feel detection
-- [ ] Track classification: percussion, bass, empty, sounding-bar counts
-- [ ] Note and technique census
-- [ ] Bar integrity: find over- and under-full bars
-- [ ] Key and tuning parsing from strings
+- [x] Score summary: tracks, duration, meters, tempo map, key, tunings
+- [x] Timing primitives: bar capacity, beat position, step grids, feel detection
+- [x] Track classification: percussion, bass, empty, sounding-bar counts
+- [x] Note and technique census
+- [x] Bar integrity: find over- and under-full bars
+- [x] Key and tuning parsing from strings
 
-## Phase 3 — structural edits
+## Phase 3 — structural edits *(done)*
 
 Changing the shape of a score, with the integrity guards that make it safe.
 
-- [ ] Track: create, clone, remove, rename, reorder, unique naming
-- [ ] Bar and beat and note construction
-- [ ] Slice a bar range; splice a range from one score into another
-- [ ] Append bars from another score
-- [ ] Section markers: set, patch, rename
-- [ ] Silence a bar range; drop empty tracks
+- [x] Track: create, clone, remove, rename, reorder, unique naming
+- [x] Bar and beat and note construction
+- [x] Slice a bar range; splice a range from one score into another
+- [x] Append bars from another score
+- [x] Section markers: set, patch, rename
+- [x] Silence a bar range; drop empty tracks
 - [x] Clamp to capacity; assert no bar was made over-full by an edit
 
 The guards matter as much as the edits. An operation that can produce an
 over-full bar must be paired with a check that says so.
 
-## Phase 4 — pitch and tuning
+## Phase 4 — pitch and tuning *(done)*
 
-- [ ] Transpose a score, a track or a bar range, chromatic and diatonic
-- [ ] Retune a score to a target tuning
-- [ ] Retune **preserving fingering** — same frets, different pitches
-- [ ] Pitch-class mapping between keys
-- [ ] Capo and per-staff transposition
+- [x] Transpose a score, a track or a bar range, chromatic and diatonic
+- [x] Retune a score to a target tuning
+- [x] Retune **preserving fingering** — same frets, different pitches
+- [x] Pitch-class mapping between keys
+- [x] Capo and per-staff transposition
 
-## Phase 5 — note and articulation edits
+## Phase 5 — note and articulation edits *(done)*
 
 The "apply this to a selection" family. Deterministic and predictable, which is
 what separates them from generation.
 
-- [ ] Set or clear any technique over a selection
-- [ ] Selection by track, bar range, string, pitch class, or predicate
-- [ ] Accents and dynamics over a selection
-- [ ] Re-finger a passage onto different strings, preserving pitch
-- [ ] Split or merge voices
+- [x] Set or clear any technique over a selection
+- [x] Selection by track, bar range, string, pitch class, or predicate
+- [x] Accents and dynamics over a selection
+- [x] Re-finger a passage onto different strings, preserving pitch
+- [x] Split or merge voices
 
 A worked example of the shape: *palm-mute every note on the lowest string
 within these bars*. The user names the target and can predict the result.
 
-## Phase 6 — rendering adapters
+## Phase 6 — rendering adapters *(ASCII done; HTML/PDF future)*
 
 Write-only, so none of them takes the round-trip invariants.
 
-- [ ] `ascii` — tablature for a track and for a score, bar-range windows
+- [x] `ascii` — tablature for a track and for a score, bar-range windows
 - [ ] `html` — a standalone document
 - [ ] `pdf` — print
 
-## Phase 7 — interchange and audio
+## Phase 7 — interchange and audio *(done)*
 
 Both round-trip, so both implement the pair of traits.
 
-- [ ] `midi` — read and write
-- [ ] `musicxml` — read and write
-- [ ] PCM render via a soundfont
+- [x] `midi` — read and write
+- [x] `musicxml` — read and write
+- [x] PCM render via a soundfont
 
 Sequenced last because none of it is needed to edit a score correctly, and each
 piece is independently useful.
