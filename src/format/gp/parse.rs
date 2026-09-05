@@ -233,7 +233,7 @@ pub(crate) fn parse(xml: &str) -> Result<Document> {
                 .and_then(|r| r.attr("start"))
                 .is_some_and(|value| value == "true"),
             repeat_end: m.child("Repeat").and_then(|r| {
-                let is_end = r.attr("end") == Some("true") || r.attr("count").is_some();
+                let is_end = r.attr("end") == Some("true");
                 is_end.then(|| r.attr("count").and_then(|c| c.parse().ok()).unwrap_or(2))
             }),
             alternate_ending: m
