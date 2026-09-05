@@ -74,3 +74,23 @@ fn dynamics_and_voice_split_merge_are_reversible() {
         Rhythm::new(NoteValue::Eighth)
     );
 }
+
+#[test]
+fn selection_edits_ignore_preexisting_overfull_voices() {
+    let mut doc = fixtures::meters_and_sections();
+    let beat = doc.bars[0].voices[0].beats[0].clone();
+    doc.bars[0].voices[0].beats.push(beat);
+
+    selection::set_technique(
+        &mut doc,
+        Selection {
+            bars: Some((1, 1)),
+            ..Selection::default()
+        },
+        Technique::PalmMute,
+    )
+    .unwrap();
+    assert!(tabslib::inspect::bar_integrity(&doc)
+        .iter()
+        .any(|item| item.bar_index == 0 && item.duration > item.capacity));
+}

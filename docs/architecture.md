@@ -120,6 +120,12 @@ playback-oriented inspection and MIDI export use repeat order when it is
 present, and percussion inspection/export resolves raw track-local IDs through
 their observed MIDI pitches and broad kit roles.
 
+Edit guards compare each resulting voice with its `(track, bar, voice)` state
+before the edit. Existing over-full voices are preserved, while a change that
+increases one or creates a new one is rejected. Pitch transformations likewise
+skip percussion tracks, whose `fret` field carries an instrument number rather
+than a fretted-string position.
+
 ## What is deliberately not here
 
 Generation, arrangement, style modelling and quality scoring. They need a model

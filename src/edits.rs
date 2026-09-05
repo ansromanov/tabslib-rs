@@ -255,7 +255,6 @@ pub fn reorder_track(doc: &mut Document, from: usize, to: usize) -> Result<(), E
 
 /// Returns an independent document containing inclusive master bars.
 pub fn slice(doc: &Document, start: usize, end: usize) -> Result<Document, EditError> {
-    let before = overfull_state(doc);
     let selected = range(start, end, doc.master_bars.len())?;
     let mut out = doc.clone();
     out.master_bars = selected
@@ -275,7 +274,6 @@ pub fn slice(doc: &Document, start: usize, end: usize) -> Result<Document, EditE
         .map(|id| id as u32)
         .collect::<std::collections::BTreeSet<_>>();
     out.bars.retain(|bar| ids.contains(&bar.id));
-    check(&out, &before)?;
     Ok(out)
 }
 /// Replaces a destination bar range with a source range of equal length.

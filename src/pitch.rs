@@ -83,6 +83,10 @@ where
     Ok(())
 }
 
+fn is_percussion(doc: &Document, track: usize) -> bool {
+    doc.tracks[track].tuning.is_empty() || doc.tracks[track].tuning.iter().all(|pitch| *pitch == 0)
+}
+
 fn transpose_selected(
     doc: &mut Document,
     track: Option<usize>,
@@ -95,7 +99,14 @@ fn transpose_selected(
         .iter()
         .map(|track| track.tuning.clone())
         .collect::<Vec<_>>();
+    let percussion = tunings
+        .iter()
+        .map(|tuning| tuning.is_empty() || tuning.iter().all(|pitch| *pitch == 0))
+        .collect::<Vec<_>>();
     each_note_mut(doc, track, start, end, |track_index, bar_index, note| {
+        if percussion[track_index] {
+            return;
+        }
         if let Some(midi) = note.midi {
             note.midi = Some(midi + semitones);
             if let (Some(string), Some(fret)) = (note.string, note.fret) {
@@ -125,6 +136,9 @@ fn validate_playability(
         let voice = packed / 1_000_000;
         let beat = packed % 1_000_000;
         for note in &doc.bars[bar].voices[voice].beats[beat].notes {
+            if is_percussion(doc, track_index) {
+                continue;
+            }
             if let (Some(string), Some(fret)) = (note.string, note.fret) {
                 if fret < 0
                     || usize::try_from(string)
@@ -214,6 +228,9 @@ pub fn retune_preserve_pitch(
         .ok_or_else(|| PitchError::InvalidSelection("track index".into()))?
         .tuning
         .clone();
+    if is_percussion(doc, track) {
+        return Ok(());
+    }
     each_note_mut(doc, Some(track), 0, end, |_, bar, note| {
         if let (Some(string), Some(midi)) = (note.string, note.midi) {
             if let Some(open) = tuning.get(old.len().saturating_sub(string as usize)) {
@@ -249,6 +266,9 @@ pub fn retune_preserve_fingering(
         .ok_or_else(|| PitchError::InvalidSelection("track index".into()))?
         .tuning
         .clone();
+    if is_percussion(doc, track) {
+        return Ok(());
+    }
     each_note_mut(doc, Some(track), 0, end, |_, _, note| {
         if let (Some(string), Some(fret)) = (note.string, note.fret) {
             if let (Some(old_open), Some(new_open)) = (

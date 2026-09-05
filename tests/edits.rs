@@ -89,6 +89,18 @@ fn edits_ignore_preexisting_overfull_voices_outside_the_edit() {
 }
 
 #[test]
+fn slice_preserves_preexisting_overfull_voices() {
+    let mut doc = fixtures::meters_and_sections();
+    let beat = doc.bars[0].voices[0].beats[0].clone();
+    doc.bars[0].voices[0].beats.push(beat);
+
+    let sliced = edits::slice(&doc, 0, 0).unwrap();
+    assert!(inspect::bar_integrity(&sliced)
+        .iter()
+        .any(|item| item.bar_index == 0 && item.duration > item.capacity));
+}
+
+#[test]
 fn edits_reject_a_longer_preexisting_overfull_voice() {
     let mut destination = fixtures::meters_and_sections();
     let beat = destination.bars[0].voices[0].beats[0].clone();
