@@ -275,7 +275,7 @@ pub fn classify_track(doc: &Document, track_index: usize) -> Option<(TrackKind, 
         }
     }
     let name = track.name.to_ascii_lowercase();
-    let kind = if track.tuning.is_empty() {
+    let kind = if track.tuning.is_empty() || track.tuning.iter().all(|pitch| *pitch == 0) {
         TrackKind::Percussion
     } else if sounding == 0 {
         TrackKind::Empty

@@ -114,9 +114,11 @@ MusicXML adapters provide read/write conversion; `ascii` and `wav` are
 write-only views.
 
 The model also carries format-neutral mixer state, ties, repeat navigation,
-alternate endings, and broad percussion roles. GPIF and MusicXML adapters map
-their respective representations into those fields; playback-oriented
-inspection and MIDI export use repeat order when it is present.
+alternate endings, and track-local percussion articulation mappings. GPIF and
+MusicXML adapters map their respective representations into those fields;
+playback-oriented inspection and MIDI export use repeat order when it is
+present, and percussion inspection/export resolves raw track-local IDs through
+their observed MIDI pitches and broad kit roles.
 
 ## What is deliberately not here
 

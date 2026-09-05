@@ -16,6 +16,7 @@ fn extra_track(name: &str) -> Track {
         volume: None,
         mute: false,
         solo: false,
+        percussion_articulations: Vec::new(),
     }
 }
 

@@ -303,6 +303,7 @@ pub fn read(bytes: &[u8]) -> Result<Document> {
             volume: None,
             mute: false,
             solo: false,
+            percussion_articulations: Vec::new(),
         })
         .collect();
     let master_bars = (0..count)

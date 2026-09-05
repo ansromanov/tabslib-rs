@@ -19,6 +19,28 @@ pub enum DrumRole {
     Other,
 }
 
+/// A track-local articulation identifier resolved to a standard MIDI sound.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PercussionArticulation {
+    /// Identifier stored on the score note.
+    pub raw_id: i32,
+    /// Standard General MIDI percussion pitch.
+    pub midi: u8,
+    /// Broad kit role for inspection and export decisions.
+    pub role: DrumRole,
+}
+
+/// Resolves one track-local articulation using its observed MIDI pitch.
+pub const fn articulation(raw_id: i32, midi: i32) -> Option<PercussionArticulation> {
+    match midi_note(midi) {
+        Some(midi) => match role(midi) {
+            Some(role) => Some(PercussionArticulation { raw_id, midi, role }),
+            None => None,
+        },
+        None => None,
+    }
+}
+
 /// Returns the standard MIDI pitch for a raw articulation identifier.
 pub const fn midi_note(articulation: i32) -> Option<u8> {
     if articulation >= 35 && articulation <= 81 {
