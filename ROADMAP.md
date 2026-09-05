@@ -68,7 +68,7 @@ Changing the shape of a score, with the integrity guards that make it safe.
 - [ ] Append bars from another score
 - [ ] Section markers: set, patch, rename
 - [ ] Silence a bar range; drop empty tracks
-- [ ] Clamp to capacity; assert no bar was made over-full by an edit
+- [x] Clamp to capacity; assert no bar was made over-full by an edit
 
 The guards matter as much as the edits. An operation that can produce an
 over-full bar must be paired with a check that says so.
