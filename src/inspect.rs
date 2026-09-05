@@ -1,6 +1,6 @@
 //! Read-only score inspection with exact rational timing.
 
-use crate::model::{Document, Rhythm};
+use crate::model::{Document, Rhythm, Technique};
 use std::collections::BTreeMap;
 
 /// An exact non-negative rational number.
@@ -75,6 +75,63 @@ pub fn playback_order(doc: &Document) -> Vec<usize> {
         }
     }
     order
+}
+
+/// Returns note locations whose tie endpoints are missing or have different pitches.
+pub fn tied_pitch_mismatches(doc: &Document) -> Vec<(usize, usize, usize, usize)> {
+    let mut mismatches = Vec::new();
+    for track_index in 0..doc.tracks.len() {
+        let mut pending: Vec<Vec<PendingTie>> = Vec::new();
+        for bar_index in 0..doc.master_bars.len() {
+            let Some(bar_id) = doc.master_bars[bar_index].bar_ids.get(track_index) else {
+                continue;
+            };
+            let Some(bar) = doc.bars.iter().find(|bar| bar.id == *bar_id as u32) else {
+                continue;
+            };
+            for (voice_index, voice) in bar.voices.iter().enumerate() {
+                if pending.len() <= voice_index {
+                    pending.resize_with(voice_index + 1, Vec::new);
+                }
+                for (beat_index, beat) in voice.beats.iter().enumerate() {
+                    for note in &beat.notes {
+                        let destination = note
+                            .techniques
+                            .iter()
+                            .any(|technique| matches!(technique, Technique::TieDestination));
+                        let origin = note
+                            .techniques
+                            .iter()
+                            .any(|technique| matches!(technique, Technique::TieOrigin));
+                        if destination {
+                            if let Some(position) = pending[voice_index]
+                                .iter()
+                                .position(|(_, _, _, midi)| *midi == note.midi)
+                            {
+                                pending[voice_index].remove(position);
+                            } else {
+                                mismatches.push((bar_index, voice_index, beat_index, beat_index));
+                            }
+                        }
+                        if origin {
+                            pending[voice_index].push((
+                                bar_index,
+                                voice_index,
+                                beat_index,
+                                note.midi,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+        for (voice_index, pending) in pending.into_iter().enumerate() {
+            for (bar_index, _, beat_index, _) in pending {
+                mismatches.push((bar_index, voice_index, beat_index, beat_index));
+            }
+        }
+    }
+    mismatches
 }
 /// Exact duration of a written rhythm, measured in whole notes.
 pub fn rhythm_duration(rhythm: Rhythm) -> Fraction {
@@ -243,6 +300,7 @@ pub struct BarIntegrity {
     /// Meter capacity.
     pub capacity: Fraction,
 }
+type PendingTie = (usize, usize, usize, Option<i32>);
 /// Summary of structural score facts.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScoreSummary {
