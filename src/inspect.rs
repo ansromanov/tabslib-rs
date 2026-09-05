@@ -306,6 +306,50 @@ pub struct NoteCensus {
     /// Percussion articulation counts.
     pub articulations: BTreeMap<i32, usize>,
 }
+/// Descriptive statistics collected from a score without interpreting style.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScoreStatistics {
+    /// Number of instrument tracks.
+    pub tracks: usize,
+    /// Number of master bars.
+    pub bars: usize,
+    /// Number of voices referenced by bars.
+    pub voices: usize,
+    /// Number of beats, including rests.
+    pub beats: usize,
+    /// Number of notes, including percussion notes.
+    pub notes: usize,
+    /// Number of notes with a sounding MIDI pitch.
+    pub pitched_notes: usize,
+    /// Number of empty beats.
+    pub rests: usize,
+    /// Note counts per master bar, in score order.
+    pub notes_per_bar: Vec<usize>,
+    /// Pitched-note counts by chromatic pitch class.
+    pub pitch_classes: BTreeMap<i32, usize>,
+    /// Lowest and highest observed sounding MIDI pitches.
+    pub pitch_range: Option<(i32, i32)>,
+    /// Consecutive sounding-pitch intervals by semitone distance.
+    pub pitch_intervals: BTreeMap<i32, usize>,
+    /// Beat counts keyed by exact written duration.
+    pub durations: BTreeMap<Fraction, usize>,
+    /// Technique counts keyed by stable technique names.
+    pub techniques: BTreeMap<String, usize>,
+    /// Percussion articulation counts keyed by raw articulation id.
+    pub articulations: BTreeMap<i32, usize>,
+}
+/// A material-based key estimate with supporting evidence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KeyEstimate {
+    /// Most likely tonic and mode.
+    pub key: crate::model::KeySignature,
+    /// Winning candidate score divided by all candidate scores.
+    pub confidence: Fraction,
+    /// Number of chord-root observations supporting the tonic.
+    pub root_support: usize,
+    /// Number of pitched notes used by the estimate.
+    pub pitched_notes: usize,
+}
 /// A voice whose duration differs from meter capacity.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BarIntegrity {
@@ -385,12 +429,7 @@ pub fn note_census(doc: &Document) -> NoteCensus {
                         *result.articulations.entry(a).or_insert(0) += 1;
                     }
                     for technique in &note.techniques {
-                        let name = match technique {
-                            crate::model::Technique::Slide { .. } => "Slide".to_string(),
-                            crate::model::Technique::Bend { .. } => "Bend".to_string(),
-                            crate::model::Technique::Harmonic { .. } => "Harmonic".to_string(),
-                            _ => format!("{technique:?}"),
-                        };
+                        let name = technique_name(technique);
                         *result.techniques.entry(name).or_insert(0) += 1;
                     }
                 }
@@ -398,6 +437,180 @@ pub fn note_census(doc: &Document) -> NoteCensus {
         }
     }
     result
+}
+fn technique_name(technique: &crate::model::Technique) -> String {
+    match technique {
+        crate::model::Technique::Slide { .. } => "Slide".to_string(),
+        crate::model::Technique::Bend { .. } => "Bend".to_string(),
+        crate::model::Technique::Harmonic { .. } => "Harmonic".to_string(),
+        _ => format!("{technique:?}"),
+    }
+}
+/// Returns descriptive counts and exact duration/pitch histograms.
+///
+/// Percussion contributes to note and articulation counts, but not to pitched
+/// statistics. The result describes the document as written and does not use
+/// a corpus or a style profile.
+pub fn statistics(doc: &Document) -> ScoreStatistics {
+    let mut result = ScoreStatistics {
+        tracks: doc.tracks.len(),
+        bars: doc.master_bars.len(),
+        voices: 0,
+        beats: 0,
+        notes: 0,
+        pitched_notes: 0,
+        rests: 0,
+        notes_per_bar: vec![0; doc.master_bars.len()],
+        pitch_classes: BTreeMap::new(),
+        pitch_range: None,
+        pitch_intervals: BTreeMap::new(),
+        durations: BTreeMap::new(),
+        techniques: BTreeMap::new(),
+        articulations: BTreeMap::new(),
+    };
+    let mut previous_pitch = vec![None; doc.tracks.len()];
+    for (track_index, _) in doc.tracks.iter().enumerate() {
+        for bar_index in 0..doc.master_bars.len() {
+            let Some(bar) = bar_for(doc, bar_index, track_index) else {
+                continue;
+            };
+            let percussion = doc.tracks[track_index].tuning.is_empty()
+                || doc.tracks[track_index]
+                    .tuning
+                    .iter()
+                    .all(|pitch| *pitch == 0);
+            result.voices += bar.voices.len();
+            for voice in &bar.voices {
+                for beat in &voice.beats {
+                    result.beats += 1;
+                    *result
+                        .durations
+                        .entry(rhythm_duration(beat.rhythm))
+                        .or_insert(0) += 1;
+                    if beat.notes.is_empty() {
+                        result.rests += 1;
+                    }
+                    for note in &beat.notes {
+                        result.notes += 1;
+                        result.notes_per_bar[bar_index] += 1;
+                        if let Some(articulation) = note.articulation {
+                            *result.articulations.entry(articulation).or_insert(0) += 1;
+                        }
+                        for technique in &note.techniques {
+                            *result
+                                .techniques
+                                .entry(technique_name(technique))
+                                .or_insert(0) += 1;
+                        }
+                        if percussion {
+                            continue;
+                        }
+                        let Some(midi) = note.midi else { continue };
+                        result.pitched_notes += 1;
+                        if let Some(previous) = previous_pitch[track_index] {
+                            *result.pitch_intervals.entry(midi - previous).or_insert(0) += 1;
+                        }
+                        previous_pitch[track_index] = Some(midi);
+                        *result.pitch_classes.entry(midi.rem_euclid(12)).or_insert(0) += 1;
+                        result.pitch_range = Some(match result.pitch_range {
+                            Some((low, high)) => (low.min(midi), high.max(midi)),
+                            None => (midi, midi),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    result
+}
+/// Estimates key and mode from sounding notes and chord-root evidence.
+///
+/// Chord roots are inferred only when a beat contains a pitch and its perfect
+/// fifth. If no such evidence exists, the sounding pitch distribution is used.
+/// The estimate is intentionally general-purpose; it does not apply a genre,
+/// corpus, or generation preference.
+pub fn determine_key(doc: &Document) -> Option<KeyEstimate> {
+    let mut pitch_classes = [0usize; 12];
+    let mut root_support = [0usize; 12];
+    let mut pitched_notes = 0;
+    for (track_index, _) in doc.tracks.iter().enumerate() {
+        let percussion = doc.tracks[track_index].tuning.is_empty()
+            || doc.tracks[track_index]
+                .tuning
+                .iter()
+                .all(|pitch| *pitch == 0);
+        if percussion {
+            continue;
+        }
+        for bar_index in 0..doc.master_bars.len() {
+            let Some(bar) = bar_for(doc, bar_index, track_index) else {
+                continue;
+            };
+            for voice in &bar.voices {
+                for beat in &voice.beats {
+                    let mut present = [false; 12];
+                    for note in &beat.notes {
+                        let Some(midi) = note.midi else { continue };
+                        let pitch_class = midi.rem_euclid(12) as usize;
+                        present[pitch_class] = true;
+                        pitch_classes[pitch_class] += 1;
+                        pitched_notes += 1;
+                    }
+                    for root in 0..12 {
+                        if present[root] && present[(root + 7) % 12] {
+                            root_support[root] += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if pitched_notes == 0 {
+        return None;
+    }
+    if root_support.iter().all(|support| *support == 0) {
+        root_support = pitch_classes;
+    }
+    let major = [0, 2, 4, 5, 7, 9, 11];
+    let minor = [0, 2, 3, 5, 7, 8, 10];
+    let mut candidates = Vec::with_capacity(24);
+    for (tonic, tonic_root_support) in root_support.iter().copied().enumerate() {
+        for is_minor in [false, true] {
+            let scale = if is_minor { &minor } else { &major };
+            let mut score = 0usize;
+            for (pitch_class, count) in pitch_classes.iter().copied().enumerate() {
+                if scale.contains(&((pitch_class + 12 - tonic) % 12)) {
+                    score += count * 2;
+                }
+                if pitch_class == tonic {
+                    score += count * 2;
+                }
+            }
+            score += tonic_root_support * 4;
+            candidates.push((score, tonic, is_minor));
+        }
+    }
+    let total_score = candidates
+        .iter()
+        .map(|candidate| candidate.0)
+        .sum::<usize>();
+    let &(score, tonic, minor) = candidates.iter().max_by_key(|candidate| {
+        (
+            candidate.0,
+            root_support[candidate.1],
+            usize::from(!candidate.2),
+            usize::MAX - candidate.1,
+        )
+    })?;
+    Some(KeyEstimate {
+        key: crate::model::KeySignature {
+            tonic: tonic as i8,
+            minor,
+        },
+        confidence: Fraction::new(score as u64, total_score as u64),
+        root_support: root_support[tonic],
+        pitched_notes,
+    })
 }
 /// Finds every under-full or over-full voice.
 pub fn bar_integrity(doc: &Document) -> Vec<BarIntegrity> {

@@ -75,3 +75,42 @@ fn tied_pitch_inspection_catches_changed_endpoints() {
     doc.bars[0].voices[0].beats[1].notes[0].midi = Some(99);
     assert!(!inspect::tied_pitch_mismatches(&doc).is_empty());
 }
+
+#[test]
+fn statistics_report_exact_score_shape() {
+    let statistics = inspect::statistics(&fixtures::repeated_frets());
+    assert_eq!(statistics.tracks, 1);
+    assert_eq!(statistics.bars, 5);
+    assert_eq!(statistics.voices, 5);
+    assert_eq!(statistics.beats, 40);
+    assert_eq!(statistics.notes, 40);
+    assert_eq!(statistics.pitched_notes, 40);
+    assert_eq!(statistics.rests, 0);
+    assert_eq!(statistics.notes_per_bar, vec![8; 5]);
+    assert_eq!(statistics.durations[&Fraction::new(1, 8)], 40);
+    assert_eq!(statistics.pitch_range, Some((40, 52)));
+    assert_eq!(statistics.pitch_classes.values().sum::<usize>(), 40);
+    assert_eq!(statistics.pitch_intervals.values().sum::<usize>(), 39);
+}
+
+#[test]
+fn key_estimation_uses_chord_root_evidence() {
+    let mut doc = fixtures::repeated_frets();
+    for bar in &mut doc.bars {
+        for beat in &mut bar.voices[0].beats {
+            beat.notes[0].midi = Some(60);
+            for (offset, midi) in [64, 67].into_iter().enumerate() {
+                let mut note = beat.notes[0].clone();
+                note.id += offset as u32 + 1;
+                note.midi = Some(midi);
+                beat.notes.push(note);
+            }
+        }
+    }
+    let estimate = inspect::determine_key(&doc).unwrap();
+    assert_eq!(estimate.key.tonic, 0);
+    assert!(!estimate.key.minor);
+    assert_eq!(estimate.root_support, 40);
+    assert_eq!(estimate.pitched_notes, 120);
+    assert!(estimate.confidence > Fraction::new(1, 24));
+}
