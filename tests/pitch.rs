@@ -81,3 +81,21 @@ fn key_mapping_diatonic_interval_and_capo_are_deterministic() {
         before.iter().map(|x| x.0.unwrap()).collect::<Vec<_>>()
     );
 }
+
+#[test]
+fn pitch_operations_skip_percussion_frets() {
+    let original = fixtures::drum_patterns();
+    let before = pitches(&original);
+
+    let mut transposed = original.clone();
+    pitch::transpose(&mut transposed, 3).unwrap();
+    assert_eq!(pitches(&transposed), before);
+
+    let mut pitch_kept = original.clone();
+    pitch::retune_preserve_pitch(&mut pitch_kept, 0, &[40, 45, 50, 55, 59, 64]).unwrap();
+    assert_eq!(pitches(&pitch_kept), before);
+
+    let mut fingering_kept = original;
+    pitch::retune_preserve_fingering(&mut fingering_kept, 0, &[40, 45, 50, 55, 59, 64]).unwrap();
+    assert_eq!(pitches(&fingering_kept), before);
+}

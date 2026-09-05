@@ -1,6 +1,9 @@
 //! Deterministic note and articulation edits over explicit selections.
 
+use std::collections::BTreeMap;
+
 use crate::inspect::bar_integrity;
+use crate::inspect::Fraction;
 use crate::model::{Document, Note, Technique};
 
 /// A note selection. `None` means every value on that axis.
@@ -28,6 +31,21 @@ pub enum SelectionError {
 }
 
 type NoteIndex = (usize, usize, usize, usize, usize);
+type IntegrityKey = (usize, usize, usize);
+type IntegrityState = BTreeMap<IntegrityKey, Fraction>;
+
+fn overfull_state(doc: &Document) -> IntegrityState {
+    bar_integrity(doc)
+        .into_iter()
+        .filter(|item| item.duration > item.capacity)
+        .map(|item| {
+            (
+                (item.track_index, item.bar_index, item.voice_index),
+                item.duration,
+            )
+        })
+        .collect()
+}
 
 fn selected_indices(
     doc: &Document,
@@ -77,10 +95,16 @@ fn selected_indices(
     Ok(result)
 }
 
-fn check(doc: &Document) -> Result<(), SelectionError> {
+fn check(doc: &Document, before: &IntegrityState) -> Result<(), SelectionError> {
     let failures = bar_integrity(doc)
         .into_iter()
         .filter(|item| item.duration > item.capacity)
+        .filter(|item| {
+            let key = (item.track_index, item.bar_index, item.voice_index);
+            before
+                .get(&key)
+                .is_none_or(|duration| item.duration > *duration)
+        })
         .collect::<Vec<_>>();
     if failures.is_empty() {
         Ok(())
@@ -95,6 +119,7 @@ pub fn set_technique(
     selection: Selection,
     technique: Technique,
 ) -> Result<(), SelectionError> {
+    let before = overfull_state(doc);
     for (_, _, bar, voice, packed) in selected_indices(doc, selection, None)? {
         let beat = packed / 100_000;
         let note = packed % 100_000;
@@ -103,7 +128,7 @@ pub fn set_technique(
             target.techniques.push(technique);
         }
     }
-    check(doc)
+    check(doc, &before)
 }
 
 /// Clears an exact technique from every selected note.
@@ -112,6 +137,7 @@ pub fn clear_technique(
     selection: Selection,
     technique: &Technique,
 ) -> Result<(), SelectionError> {
+    let before = overfull_state(doc);
     for (_, _, bar, voice, packed) in selected_indices(doc, selection, None)? {
         let beat = packed / 100_000;
         let note = packed % 100_000;
@@ -119,7 +145,7 @@ pub fn clear_technique(
             .techniques
             .retain(|item| item != technique);
     }
-    check(doc)
+    check(doc, &before)
 }
 
 /// Sets the accent technique on every selected note.
@@ -132,12 +158,13 @@ pub fn set_dynamic(
     selection: Selection,
     dynamic: Option<String>,
 ) -> Result<(), SelectionError> {
+    let before = overfull_state(doc);
     let indices = selected_indices(doc, selection, None)?;
     for (_, _, bar, voice, packed) in indices {
         let beat = packed / 100_000;
         doc.bars[bar].voices[voice].beats[beat].dynamic = dynamic.clone();
     }
-    check(doc)
+    check(doc, &before)
 }
 
 /// Re-fingers selected notes onto one target string without changing MIDI pitch.
@@ -146,6 +173,7 @@ pub fn refinger(
     selection: Selection,
     target_string: u32,
 ) -> Result<(), SelectionError> {
+    let before = overfull_state(doc);
     let indices = selected_indices(doc, selection, None)?;
     for (track, bar_index, bar, voice, packed) in indices {
         let beat = packed / 100_000;
@@ -174,7 +202,7 @@ pub fn refinger(
         note.string = Some(target_string);
         note.fret = Some(fret);
     }
-    check(doc)
+    check(doc, &before)
 }
 
 /// Splits a voice at a beat index, preserving beat order and durations.
@@ -185,6 +213,7 @@ pub fn split_voice(
     voice: usize,
     at_beat: usize,
 ) -> Result<(), SelectionError> {
+    let before = overfull_state(doc);
     let id = *doc
         .master_bars
         .get(bar)
@@ -214,7 +243,7 @@ pub fn split_voice(
         .find(|item| item.id == id as u32)
         .ok_or_else(|| SelectionError::InvalidSelection("bar".into()))?;
     bar.voices.push(crate::model::Voice { id: new_id, beats });
-    check(doc)
+    check(doc, &before)
 }
 
 /// Merges a source voice into a target voice and removes the source voice.
@@ -225,6 +254,7 @@ pub fn merge_voices(
     target: usize,
     source: usize,
 ) -> Result<(), SelectionError> {
+    let before = overfull_state(doc);
     if target == source {
         return Err(SelectionError::InvalidSelection(
             "voices must differ".into(),
@@ -246,5 +276,5 @@ pub fn merge_voices(
     let moved = score_bar.voices.remove(source).beats;
     let target = if source < target { target - 1 } else { target };
     score_bar.voices[target].beats.extend(moved);
-    check(doc)
+    check(doc, &before)
 }
