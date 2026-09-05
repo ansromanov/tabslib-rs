@@ -2,6 +2,7 @@
 
 use tabslib::fixtures;
 use tabslib::inspect::{self, BarFeel, Fraction, TrackKind};
+use tabslib::model::Technique;
 
 #[test]
 fn summary_reports_fixture_shape() {
@@ -59,4 +60,18 @@ fn key_and_tuning_parsers_are_normalized() {
         inspect::parse_tuning("Drop D").unwrap(),
         fixtures::TUNING_DROP_D
     );
+}
+
+#[test]
+fn tied_pitch_inspection_catches_changed_endpoints() {
+    let mut doc = fixtures::repeated_frets();
+    doc.bars[0].voices[0].beats[0].notes[0]
+        .techniques
+        .push(Technique::TieOrigin);
+    doc.bars[0].voices[0].beats[1].notes[0]
+        .techniques
+        .push(Technique::TieDestination);
+    assert!(inspect::tied_pitch_mismatches(&doc).is_empty());
+    doc.bars[0].voices[0].beats[1].notes[0].midi = Some(99);
+    assert!(!inspect::tied_pitch_mismatches(&doc).is_empty());
 }
