@@ -24,21 +24,24 @@ a score rather than a container for one.
 
 | adapter | reads | writes | round-trips | feature |
 | --- | :-: | :-: | :-: | --- |
-| `gp` — version 7 and 8 containers | yes | partial | yes | `gp` *(default)* |
-| `ascii` — plain-text tablature | later | planned | no | `ascii` |
+| `gp` — version 7 and 8 containers | yes | yes | yes | `gp` *(default)* |
+| `ascii` — plain-text tablature | no | yes | no | `ascii` |
 | `html` | no | planned | no | `html` |
 | `pdf` | no | planned | no | `pdf` |
-| `musicxml`, `midi` | planned | planned | yes | — |
+| `midi` | yes | yes | yes | `midi` |
+| `musicxml` | yes | yes | yes | `musicxml` |
+| `wav` — PCM rendering | no | yes | no | `wav` |
 
 `cargo build --no-default-features` gives you the model, inspection and edits
 with no format code and `thiserror` as the only dependency. CI enforces it.
 
 See [docs/architecture.md](docs/architecture.md).
 
-## Status — 0.1, codec only
+## Status — 0.1
 
-Reading is solid on real files. Writing is correct for the modelled subset and
-**not yet lossless for a whole file**.
+Reading and writing are covered by deterministic model and codec tests. The GP
+adapter retains unmodelled container data, and the interchange/rendering
+adapters are feature-gated.
 
 | | |
 | --- | --- |
@@ -46,11 +49,11 @@ Reading is solid on real files. Writing is correct for the modelled subset and
 | read | tracks, tunings, colours, master bars, sections, time signatures, clefs, bars, voices, beats, rhythms, notes, techniques |
 | techniques | palm mute, dead, tapped, hammer-on/pull-off, let-ring, vibrato, slide (with flags), bend (with values), harmonics (with type and fret) |
 | write | the above, in the shapes the originating application emits |
-| **not yet** | mixer state, stylesheets, extended properties, lyrics, chord diagrams, automations, repeats, alternate endings, tuplet output, MIDI and MusicXML codecs, older container versions |
+| **not yet** | stylesheets, extended properties, lyrics, chord diagrams, automations, older container versions, HTML/PDF renderers |
 
-Because RSE and several container-level blocks are not modelled, a save
-produces a smaller file than the source. Use it to read, and to round-trip the
-modelled subset; do not use it to rewrite a finished arrangement yet.
+Unknown GP container entries and unmodelled GPIF content are retained where the
+adapter can patch the edited model in place; structural edits fall back to
+deterministic regeneration.
 
 ## Usage
 

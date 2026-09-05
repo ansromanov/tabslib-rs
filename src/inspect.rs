@@ -60,6 +60,16 @@ pub fn bar_capacity(meter: (u32, u32)) -> Fraction {
 }
 
 /// Returns master-bar indices in playback order, expanding simple repeats.
+///
+/// ```
+/// use tabslib::{fixtures, inspect};
+///
+/// let mut score = fixtures::repeated_frets();
+/// score.master_bars[0].repeat_start = true;
+/// let last = score.master_bars.len() - 1;
+/// score.master_bars[last].repeat_end = Some(2);
+/// assert_eq!(inspect::playback_order(&score).len(), score.master_bars.len() * 2);
+/// ```
 pub fn playback_order(doc: &Document) -> Vec<usize> {
     let mut order = Vec::new();
     let mut repeat_start = 0;
@@ -78,6 +88,18 @@ pub fn playback_order(doc: &Document) -> Vec<usize> {
 }
 
 /// Returns note locations whose tie endpoints are missing or have different pitches.
+///
+/// The returned tuple is `(bar, voice, origin_beat, destination_beat)`.
+///
+/// ```
+/// use tabslib::{fixtures, inspect};
+/// use tabslib::model::Technique;
+///
+/// let mut score = fixtures::repeated_frets();
+/// score.bars[0].voices[0].beats[0].notes[0].techniques.push(Technique::TieOrigin);
+/// score.bars[0].voices[0].beats[1].notes[0].techniques.push(Technique::TieDestination);
+/// assert!(inspect::tied_pitch_mismatches(&score).is_empty());
+/// ```
 pub fn tied_pitch_mismatches(doc: &Document) -> Vec<(usize, usize, usize, usize)> {
     let mut mismatches = Vec::new();
     for track_index in 0..doc.tracks.len() {

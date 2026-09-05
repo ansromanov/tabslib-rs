@@ -65,6 +65,13 @@ pub const fn role(midi: u8) -> Option<DrumRole> {
 }
 
 /// Looks up both the normalized MIDI note and broad instrument role.
+///
+/// ```
+/// use tabslib::percussion::{lookup, DrumRole};
+///
+/// assert_eq!(lookup(36), Some((36, DrumRole::Kick)));
+/// assert_eq!(lookup(42), Some((42, DrumRole::HiHat)));
+/// ```
 pub const fn lookup(articulation: i32) -> Option<(u8, DrumRole)> {
     match midi_note(articulation) {
         Some(midi) => match role(midi) {
