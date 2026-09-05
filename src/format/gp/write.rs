@@ -206,7 +206,7 @@ pub(crate) fn write(doc: &Document) -> String {
             if let Some(volume) = t.volume { params[12] = volume.to_string(); }
             let mute = if t.mute { "<Mute/>" } else { "" };
             let solo = if t.solo { "<Solo/>" } else { "" };
-            format!("<ChannelStrip><Parameters>{}</Parameters>{mute}{solo}</ChannelStrip>", params.join(" "))
+            format!("<RSE><ChannelStrip><Parameters>{}</Parameters>{mute}{solo}</ChannelStrip></RSE>", params.join(" "))
         } else { String::new() };
         format!("<Track id=\"{}\"><Name>{}</Name>{color}<Staves><Staff>{tuning}</Staff></Staves>{prog}{channel}</Track>",
             t.id, cdata(&t.name))
