@@ -10,7 +10,7 @@
       +---------------+---------------+
       |               |               |
    inspect          edits          fixtures
-  (read-only)   (deterministic)  (generated)
+  (analysis)    (deterministic)  (generated)
       |               |               |
       +---------------+---------------+
                       |
@@ -119,6 +119,12 @@ MusicXML adapters map their respective representations into those fields;
 playback-oriented inspection and MIDI export use repeat order when it is
 present, and percussion inspection/export resolves raw track-local IDs through
 their observed MIDI pitches and broad kit roles.
+
+`inspect` may expose general key/mode determination and descriptive score
+statistics. It reports evidence about an existing document; it does not choose
+notes, apply a style profile, calibrate against a corpus, or invoke AI. General
+music theory is allowed; genre-specific composition rules belong in
+`tabslib-extras`.
 
 Edit guards compare each resulting voice with its `(track, bar, voice)` state
 before the edit. Existing over-full voices are preserved, while a change that

@@ -16,6 +16,13 @@ it reaches disk; deterministic edits are what callers come for.
 It does not decide what to play. Generation, arrangement, style modelling and
 quality scoring live in a separate crate built on this one.
 
+The public surface does include general score understanding: key and mode
+determination, descriptive statistics, timing and integrity reports, and
+deterministic document operations such as creating tracks, copying or slicing
+bars, transposing, and retuning. These APIs must describe the written score;
+they must not generate music, encode a genre, depend on metal-theory sources,
+consume a corpus, or call an AI service.
+
 Refer to formats by name only where it describes compatibility. Guitar Pro is
 Arobas Music's trademark and this project is unaffiliated, so it is never the
 subject of a sentence about what this library *is*.
