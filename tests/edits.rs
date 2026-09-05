@@ -74,3 +74,31 @@ fn sections_silence_empty_tracks_and_clamp_are_guarded() {
         .iter()
         .all(|x| x.duration <= x.capacity));
 }
+
+#[test]
+fn edits_ignore_preexisting_overfull_voices_outside_the_edit() {
+    let mut doc = fixtures::meters_and_sections();
+    let beat = doc.bars[0].voices[0].beats[0].clone();
+    doc.bars[0].voices[0].beats.push(beat);
+
+    edits::silence(&mut doc, 1, 1).unwrap();
+    assert!(inspect::bar_integrity(&doc)
+        .iter()
+        .any(|item| item.bar_index == 0 && item.duration > item.capacity));
+}
+
+#[test]
+fn edits_reject_a_longer_preexisting_overfull_voice() {
+    let mut destination = fixtures::meters_and_sections();
+    let beat = destination.bars[0].voices[0].beats[0].clone();
+    destination.bars[0].voices[0].beats.push(beat);
+
+    let mut source = fixtures::meters_and_sections();
+    let beat = source.bars[0].voices[0].beats[0].clone();
+    source.bars[0].voices[0].beats.extend([beat.clone(), beat]);
+
+    let error = edits::splice(&mut destination, 0, 0, &source, 0).unwrap_err();
+    assert!(matches!(error, edits::EditError::Overfull(items) if items
+        .iter()
+        .any(|item| item.bar_index == 0 && item.voice_index == 0)));
+}

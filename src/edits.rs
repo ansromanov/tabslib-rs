@@ -4,6 +4,8 @@
 //! voice before returning. Existing under-full voices are reported by the
 //! inspection API and are not silently repaired.
 
+use std::collections::BTreeMap;
+
 use crate::inspect::{bar_capacity, bar_integrity, rhythm_duration, Fraction};
 use crate::model::{Bar, Beat, Document, Note, Rhythm, Track, Voice};
 
@@ -16,10 +18,32 @@ pub enum EditError {
     Overfull(Vec<crate::inspect::BarIntegrity>),
 }
 
-fn check(doc: &Document) -> Result<(), EditError> {
+type IntegrityKey = (usize, usize, usize);
+type IntegrityState = BTreeMap<IntegrityKey, Fraction>;
+
+fn overfull_state(doc: &Document) -> IntegrityState {
+    bar_integrity(doc)
+        .into_iter()
+        .filter(|item| item.duration > item.capacity)
+        .map(|item| {
+            (
+                (item.track_index, item.bar_index, item.voice_index),
+                item.duration,
+            )
+        })
+        .collect()
+}
+
+fn check(doc: &Document, before: &IntegrityState) -> Result<(), EditError> {
     let overfull = bar_integrity(doc)
         .into_iter()
         .filter(|item| item.duration > item.capacity)
+        .filter(|item| {
+            let key = (item.track_index, item.bar_index, item.voice_index);
+            before
+                .get(&key)
+                .is_none_or(|duration| item.duration > *duration)
+        })
         .collect::<Vec<_>>();
     if overfull.is_empty() {
         Ok(())
@@ -124,6 +148,7 @@ pub fn create_track(doc: &mut Document, mut track: Track) -> usize {
 }
 /// Clones a track and all its referenced bars.
 pub fn clone_track(doc: &mut Document, track_index: usize) -> Result<usize, EditError> {
+    let before = overfull_state(doc);
     let source = doc
         .tracks
         .get(track_index)
@@ -166,11 +191,12 @@ pub fn clone_track(doc: &mut Document, track_index: usize) -> Result<usize, Edit
     for (master, new_id) in doc.master_bars.iter_mut().zip(new_ids) {
         master.bar_ids.push(new_id);
     }
-    check(doc)?;
+    check(doc, &before)?;
     Ok(new_index)
 }
 /// Removes a track and its bar references.
 pub fn remove_track(doc: &mut Document, track_index: usize) -> Result<Track, EditError> {
+    let before = overfull_state(doc);
     if track_index >= doc.tracks.len() {
         return Err(EditError::InvalidRange("track index".into()));
     }
@@ -199,7 +225,7 @@ pub fn remove_track(doc: &mut Document, track_index: usize) -> Result<Track, Edi
     doc.bars.retain(|bar| {
         !removed_ids.contains(&(bar.id as i32)) || remaining.contains(&(bar.id as i32))
     });
-    check(doc)?;
+    check(doc, &before)?;
     Ok(removed)
 }
 /// Renames a track, adding a numeric suffix if needed to preserve uniqueness.
@@ -214,6 +240,7 @@ pub fn rename_track(doc: &mut Document, track_index: usize, name: &str) -> Resul
 }
 /// Reorders tracks and their per-master-bar references.
 pub fn reorder_track(doc: &mut Document, from: usize, to: usize) -> Result<(), EditError> {
+    let before = overfull_state(doc);
     if from >= doc.tracks.len() || to >= doc.tracks.len() {
         return Err(EditError::InvalidRange("track index".into()));
     }
@@ -223,11 +250,12 @@ pub fn reorder_track(doc: &mut Document, from: usize, to: usize) -> Result<(), E
         let id = master.bar_ids.remove(from);
         master.bar_ids.insert(to, id);
     }
-    check(doc)
+    check(doc, &before)
 }
 
 /// Returns an independent document containing inclusive master bars.
 pub fn slice(doc: &Document, start: usize, end: usize) -> Result<Document, EditError> {
+    let before = overfull_state(doc);
     let selected = range(start, end, doc.master_bars.len())?;
     let mut out = doc.clone();
     out.master_bars = selected
@@ -247,7 +275,7 @@ pub fn slice(doc: &Document, start: usize, end: usize) -> Result<Document, EditE
         .map(|id| id as u32)
         .collect::<std::collections::BTreeSet<_>>();
     out.bars.retain(|bar| ids.contains(&bar.id));
-    check(&out)?;
+    check(&out, &before)?;
     Ok(out)
 }
 /// Replaces a destination bar range with a source range of equal length.
@@ -258,6 +286,7 @@ pub fn splice(
     source: &Document,
     source_start: usize,
 ) -> Result<(), EditError> {
+    let before = overfull_state(destination);
     let count = dest_end
         .checked_sub(dest_start)
         .and_then(|x| x.checked_add(1))
@@ -293,10 +322,11 @@ pub fn splice(
             destination.master_bars[dest_start + offset].bar_ids[track] = (next - 1) as i32;
         }
     }
-    check(destination)
+    check(destination, &before)
 }
 /// Appends all bars from another document with matching track count.
 pub fn append(destination: &mut Document, source: &Document) -> Result<(), EditError> {
+    let before = overfull_state(destination);
     if destination.tracks.len() != source.tracks.len() {
         return Err(EditError::InvalidRange(
             "documents have different track counts".into(),
@@ -329,7 +359,7 @@ pub fn append(destination: &mut Document, source: &Document) -> Result<(), EditE
         master.index = destination.master_bars.len();
         destination.master_bars.push(master);
     }
-    check(destination)
+    check(destination, &before)
 }
 
 /// Sets or clears a section marker at a bar.
@@ -368,6 +398,7 @@ pub fn rename_section(doc: &mut Document, old: &str, new: &str) {
 }
 /// Silences notes in an inclusive bar range while preserving rhythms and bars.
 pub fn silence(doc: &mut Document, start: usize, end: usize) -> Result<(), EditError> {
+    let before = overfull_state(doc);
     let selected = range(start, end, doc.master_bars.len())?;
     for index in selected {
         for id in doc.master_bars[index].bar_ids.clone() {
@@ -380,10 +411,11 @@ pub fn silence(doc: &mut Document, start: usize, end: usize) -> Result<(), EditE
             }
         }
     }
-    check(doc)
+    check(doc, &before)
 }
 /// Removes tracks with no sounding bars, preserving at least one track.
 pub fn drop_empty_tracks(doc: &mut Document) -> Result<(), EditError> {
+    let before = overfull_state(doc);
     let mut keep = Vec::new();
     for (i, track) in doc.tracks.iter().enumerate() {
         let sounding = doc.master_bars.iter().any(|master| {
@@ -431,7 +463,7 @@ pub fn drop_empty_tracks(doc: &mut Document) -> Result<(), EditError> {
         .collect::<std::collections::BTreeSet<_>>();
     doc.bars.retain(|bar| used.contains(&(bar.id as i32)));
     let _ = old;
-    check(doc)
+    check(doc, &before)
 }
 
 /// Clamps one voice by dropping its final beats until it fits its capacity.
@@ -441,6 +473,7 @@ pub fn clamp_voice(
     bar: usize,
     voice: usize,
 ) -> Result<(), EditError> {
+    let before = overfull_state(doc);
     let id = *doc
         .master_bars
         .get(bar)
@@ -468,9 +501,10 @@ pub fn clamp_voice(
             total.denominator * beat.rhythm.as_fraction().1,
         );
     }
-    check(doc)
+    check(doc, &before)
 }
 /// Asserts that the document has no over-full voice.
 pub fn assert_no_overfull(doc: &Document) -> Result<(), EditError> {
-    check(doc)
+    let empty = IntegrityState::new();
+    check(doc, &empty)
 }
