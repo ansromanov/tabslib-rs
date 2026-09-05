@@ -110,12 +110,8 @@ fn transpose_selected(
         if let Some(midi) = note.midi {
             note.midi = Some(midi + semitones);
             if let (Some(string), Some(fret)) = (note.string, note.fret) {
-                let open = tunings[track_index]
-                    .len()
-                    .checked_sub(string as usize)
-                    .and_then(|i| tunings[track_index].get(i))
-                    .copied()
-                    .unwrap_or(i32::MIN);
+                let open =
+                    crate::model::open_pitch(&tunings[track_index], string).unwrap_or(i32::MIN);
                 note.fret = Some(fret + semitones);
                 if open == i32::MIN || fret + semitones < 0 {
                     let _ = (bar_index, note.id);
@@ -141,11 +137,7 @@ fn validate_playability(
             }
             if let (Some(string), Some(fret)) = (note.string, note.fret) {
                 if fret < 0
-                    || usize::try_from(string)
-                        .ok()
-                        .and_then(|s| doc.tracks[track_index].tuning.len().checked_sub(s))
-                        .and_then(|i| doc.tracks[track_index].tuning.get(i))
-                        .is_none()
+                    || crate::model::open_pitch(&doc.tracks[track_index].tuning, string).is_none()
                 {
                     return Err(PitchError::Unplayable {
                         track: track_index,
@@ -222,19 +214,13 @@ pub fn retune_preserve_pitch(
         .len()
         .checked_sub(1)
         .ok_or_else(|| PitchError::InvalidSelection("empty document".into()))?;
-    let old = doc
-        .tracks
-        .get(track)
-        .ok_or_else(|| PitchError::InvalidSelection("track index".into()))?
-        .tuning
-        .clone();
     if is_percussion(doc, track) {
         return Ok(());
     }
     each_note_mut(doc, Some(track), 0, end, |_, bar, note| {
         if let (Some(string), Some(midi)) = (note.string, note.midi) {
-            if let Some(open) = tuning.get(old.len().saturating_sub(string as usize)) {
-                note.fret = Some(midi - *open);
+            if let Some(open) = crate::model::open_pitch(tuning, string) {
+                note.fret = Some(midi - open);
             } else {
                 note.fret = Some(-1);
             }
@@ -260,23 +246,17 @@ pub fn retune_preserve_fingering(
         .len()
         .checked_sub(1)
         .ok_or_else(|| PitchError::InvalidSelection("empty document".into()))?;
-    let old = doc
-        .tracks
-        .get(track)
-        .ok_or_else(|| PitchError::InvalidSelection("track index".into()))?
-        .tuning
-        .clone();
     if is_percussion(doc, track) {
         return Ok(());
     }
     each_note_mut(doc, Some(track), 0, end, |_, _, note| {
+        // The fingering is what is preserved, so only the sounding pitch moves.
+        // The old tuning is not consulted: it was, through a lookup that
+        // resolved to None for string 0 and silently skipped the whole update,
+        // which is why this function appeared to be a no-op.
         if let (Some(string), Some(fret)) = (note.string, note.fret) {
-            if let (Some(old_open), Some(new_open)) = (
-                old.get(old.len().saturating_sub(string as usize)),
-                tuning.get(tuning.len().saturating_sub(string as usize)),
-            ) {
-                note.midi = Some(new_open + fret);
-                let _ = old_open;
+            if let Some(open) = crate::model::open_pitch(tuning, string) {
+                note.midi = Some(open + fret);
             }
         }
     })

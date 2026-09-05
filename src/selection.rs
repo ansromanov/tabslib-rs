@@ -179,10 +179,10 @@ pub fn refinger(
         let beat = packed / 100_000;
         let note_index = packed % 100_000;
         let tuning = &doc.tracks[track].tuning;
-        let Some(open) = target_string
-            .checked_sub(1)
-            .and_then(|string| tuning.get(tuning.len().saturating_sub(string as usize + 1)))
-        else {
+        // `target_string` is 0-based from the lowest string, like every other
+        // string number in the model. It used to be decremented here, which
+        // silently moved the note one string away from the one requested.
+        let Some(open) = crate::model::open_pitch(tuning, target_string) else {
             return Err(SelectionError::Unplayable {
                 track,
                 bar: bar_index,
@@ -191,7 +191,7 @@ pub fn refinger(
         };
         let note = &mut doc.bars[bar].voices[voice].beats[beat].notes[note_index];
         let Some(midi) = note.midi else { continue };
-        let fret = midi - *open;
+        let fret = midi - open;
         if fret < 0 {
             return Err(SelectionError::Unplayable {
                 track,

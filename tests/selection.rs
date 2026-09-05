@@ -20,7 +20,8 @@ fn technique_selection_is_idempotent_and_filterable() {
     let selection = Selection {
         track: Some(0),
         bars: Some((0, 0)),
-        string: Some(6),
+        // 0 is the lowest string, where `repeated_frets` writes
+        string: Some(0),
         pitch_class: None,
     };
     selection::set_technique(&mut doc, selection, Technique::Accent).unwrap();
@@ -48,9 +49,26 @@ fn refinger_preserves_pitch_and_inverse_restores_positions() {
         bars: Some((0, 3)),
         ..Selection::default()
     };
-    selection::refinger(&mut doc, selection, 5).unwrap();
-    assert_eq!(doc.bars[0].voices[0].beats[0].notes[0].midi, Some(45));
-    selection::refinger(&mut doc, selection, 6).unwrap();
+    // Move the passage from the lowest string to the next one up and back.
+    // String numbers are 0-based from the lowest, so this is 0 -> 1 -> 0.
+    let low = fixtures::TUNING_E_STANDARD[0];
+    let next = fixtures::TUNING_E_STANDARD[1];
+    let sounding = doc.bars[0].voices[0].beats[0].notes[0].midi.unwrap();
+
+    selection::refinger(&mut doc, selection, 1).unwrap();
+    assert_eq!(
+        doc.bars[0].voices[0].beats[0].notes[0].midi,
+        Some(sounding),
+        "refingering must not change what is heard"
+    );
+    assert_eq!(
+        doc.bars[0].voices[0].beats[0].notes[0].fret,
+        Some(sounding - next),
+        "the fret must be re-derived from the new string"
+    );
+    assert!(next > low, "string 1 is higher than string 0");
+
+    selection::refinger(&mut doc, selection, 0).unwrap();
     assert_eq!(all_notes(&doc), before);
 }
 
