@@ -190,8 +190,9 @@ and no reason to skip the full run.
 
 ## Worktrees — mandatory for every agent
 
-**Every agent — Claude Code, Codex, Cursor, opencode, Kilo Code, Antigravity or
-any other — works in a dedicated git worktree, never in the primary checkout.**
+**Mandatory with no exceptions: every agent or harness — Claude Code, Codex, Cursor,
+opencode, Kilo Code, Antigravity or any other — works in a dedicated git worktree,
+never in the primary checkout.** This is a repository rule, not only a subagent setting.
 Parallel sessions otherwise clobber each other's edits and switch the branch out
 from under a running build.
 
