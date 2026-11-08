@@ -57,9 +57,9 @@ fn score_label_skips_percussion_and_prefers_six_strings() {
 }
 
 #[test]
-fn unrecognised_tuning_is_labelled_custom_with_its_notes() {
+fn unrecognised_tuning_is_labelled_with_its_notes() {
     let mut doc = crate::fixtures::bass_line();
     doc.tracks[0].tuning = vec![33, 40, 45, 50, 55, 59];
-    assert_eq!(score_label(&doc).as_deref(), Some("custom A E A D G B"));
+    assert_eq!(score_label(&doc).as_deref(), Some("A E A D G B"));
     assert_eq!(notes(&[40, 45]), "E A");
 }
