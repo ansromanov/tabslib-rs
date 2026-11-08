@@ -14,6 +14,7 @@ pub mod model;
 pub mod percussion;
 pub mod pitch;
 pub mod selection;
+pub mod tuning;
 
 pub use error::{Error, Result};
 pub use format::{ReadFormat, WriteFormat};
