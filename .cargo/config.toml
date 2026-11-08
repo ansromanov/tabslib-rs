@@ -1,0 +1,4 @@
+# Resolve dependencies to versions that build at the declared rust-version, so the
+# MSRV job does not break when a transitive dependency raises its own minimum.
+[resolver]
+incompatible-rust-versions = "fallback"
