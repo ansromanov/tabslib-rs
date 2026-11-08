@@ -58,7 +58,7 @@ pub fn notes(tuning: &[i32]) -> String {
 
 /// Labels a score by its first fretted track with six or more strings, falling
 /// back to the first fretted track of any size. A tuning [`describe`] does not
-/// recognise is labelled `custom` followed by its [`notes`], never guessed.
+/// recognise is labelled with its [`notes`] alone, never guessed.
 pub fn score_label(doc: &Document) -> Option<String> {
     let fretted = |t: &&crate::model::Track| t.tuning.iter().any(|p| *p != 0);
     let pick = doc
@@ -67,7 +67,7 @@ pub fn score_label(doc: &Document) -> Option<String> {
         .filter(fretted)
         .find(|t| t.tuning.len() >= 6)
         .or_else(|| doc.tracks.iter().find(fretted))?;
-    Some(describe(&pick.tuning).unwrap_or_else(|| format!("custom {}", notes(&pick.tuning))))
+    Some(describe(&pick.tuning).unwrap_or_else(|| notes(&pick.tuning)))
 }
 
 #[cfg(test)]
