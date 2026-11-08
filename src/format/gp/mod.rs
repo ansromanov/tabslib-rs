@@ -9,9 +9,11 @@ mod container;
 mod dom;
 mod note_value;
 mod parse;
+mod restyle;
 mod write;
 
 pub use dom::{parse_xml, Element};
+pub use restyle::{restyle, Restyle, VolumeDb};
 
 use crate::error::Result;
 use crate::format::{ReadFormat, WriteFormat};

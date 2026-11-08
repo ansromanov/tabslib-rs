@@ -49,6 +49,40 @@ pub(crate) fn read_source(bytes: &[u8]) -> Result<(String, RetainedEntries)> {
         .ok_or_else(|| Error::Malformed("no score payload in the archive".into()))
 }
 
+/// Reads every entry in archive order, directories included (empty data).
+pub(crate) fn read_entries(bytes: &[u8]) -> Result<RetainedEntries> {
+    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(wrap)?;
+    let mut entries = Vec::new();
+    for i in 0..zip.len() {
+        let mut file = zip.by_index(i).map_err(wrap)?;
+        let mut data = Vec::new();
+        file.read_to_end(&mut data)?;
+        entries.push((file.name().to_string(), data));
+    }
+    Ok(entries)
+}
+
+/// Writes entries in the given order with the same fixed timestamp.
+pub(crate) fn write_entries(entries: &[(String, Vec<u8>)]) -> Result<Vec<u8>> {
+    let mut buf = Vec::new();
+    {
+        let mut zip = zip::ZipWriter::new(Cursor::new(&mut buf));
+        let opts: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated)
+            .last_modified_time(zip::DateTime::from_date_and_time(2020, 1, 1, 0, 0, 0).unwrap());
+        for (name, data) in entries {
+            if name.ends_with('/') {
+                zip.add_directory(name, opts).map_err(wrap)?;
+            } else {
+                zip.start_file(name, opts).map_err(wrap)?;
+                zip.write_all(data)?;
+            }
+        }
+        zip.finish().map_err(wrap)?;
+    }
+    Ok(buf)
+}
+
 /// Writes a container with a fixed timestamp so output is byte-deterministic --
 /// the zip writer stamps wall-clock time otherwise, which has broken
 /// reproducibility in this project before.
