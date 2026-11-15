@@ -10,7 +10,7 @@
 
 use std::path::{Path, PathBuf};
 
-use tabslib::format::gp::{restyle, Gp, Restyle, VolumeDb};
+use tabslib::format::gp::{opening_tempo, restyle, Gp, Restyle, VolumeDb};
 use tabslib::{tuning, ReadFormat};
 
 const VOLUMES: VolumeDb = VolumeDb {
@@ -56,11 +56,12 @@ fn main() {
 
 fn process(path: &Path, opts: &Restyle, apply: bool) -> Result<String, String> {
     let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
-    let label = Gp::read(&bytes)
-        .map_err(|e| e.to_string())
-        .and_then(|doc| tuning::score_label(&doc).ok_or_else(|| "tuning not recognised".into()))?;
+    let doc = Gp::read(&bytes).map_err(|e| e.to_string())?;
+    let tuning = tuning::score_label(&doc).ok_or("tuning not recognised")?;
+    let bpm = opening_tempo(&bytes).map_err(|e| e.to_string())?;
+    let label = format!("{tuning} {}bpm", bpm.round() as i64);
     let out = restyle(&bytes, opts).map_err(|e| e.to_string())?;
-    let target = renamed(path, &label)?;
+    let target = renamed(path, &tuning, &label)?;
     if apply {
         let tmp = path.with_extension("gp.tmp");
         std::fs::write(&tmp, &out).map_err(|e| e.to_string())?;
@@ -73,16 +74,19 @@ fn process(path: &Path, opts: &Restyle, apply: bool) -> Result<String, String> {
     Ok(format!("{:?} -> {:?}", name(path), name(&target)))
 }
 
-/// `Song.gp` becomes `Song [Drop D].gp`; a name that already carries a bracketed
-/// tuning label is left alone.
-fn renamed(path: &Path, label: &str) -> Result<PathBuf, String> {
+/// `Song.gp` becomes `Song [Drop D 140bpm].gp`. A trailing `[Drop D]` from an
+/// earlier run is upgraded in place; a name that already ends in the full label
+/// is left alone.
+fn renamed(path: &Path, tuning: &str, label: &str) -> Result<PathBuf, String> {
     let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned());
     let stem = stem.ok_or("no file name")?;
-    let suffix = format!(" [{label}]");
-    if stem.ends_with(&suffix) {
+    let full = format!(" [{label}]");
+    if stem.ends_with(&full) {
         return Ok(path.to_path_buf());
     }
-    let target = path.with_file_name(format!("{stem}{suffix}.gp"));
+    let old = format!(" [{tuning}]");
+    let base = stem.strip_suffix(&old).unwrap_or(&stem);
+    let target = path.with_file_name(format!("{base}{full}.gp"));
     if target.exists() {
         return Err(format!("{} already exists", target.display()));
     }

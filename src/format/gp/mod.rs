@@ -13,7 +13,7 @@ mod restyle;
 mod write;
 
 pub use dom::{parse_xml, Element};
-pub use restyle::{restyle, Restyle, VolumeDb};
+pub use restyle::{opening_tempo, restyle, Restyle, VolumeDb};
 
 use crate::error::Result;
 use crate::format::{ReadFormat, WriteFormat};

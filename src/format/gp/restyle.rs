@@ -82,6 +82,25 @@ pub fn restyle(bytes: &[u8], opts: &Restyle) -> Result<Vec<u8>> {
     container::write_entries(&entries)
 }
 
+/// The opening tempo in beats per minute: the first tempo automation of the
+/// score, as stored in the GPIF payload.
+pub fn opening_tempo(bytes: &[u8]) -> Result<f64> {
+    let entries = container::read_entries(bytes)?;
+    let (_, data) = entries
+        .iter()
+        .find(|(n, _)| n.ends_with("score.gpif"))
+        .ok_or_else(|| Error::Malformed("no score payload in the archive".into()))?;
+    let xml = String::from_utf8_lossy(data);
+    xml.split("<Automation>")
+        .skip(1)
+        .filter(|a| a.contains("<Type>Tempo</Type>"))
+        .find_map(|a| {
+            let value = a.split("<Value>").nth(1)?.split("</Value>").next()?;
+            value.split_whitespace().next()?.parse().ok()
+        })
+        .ok_or_else(|| Error::Malformed("score has no tempo automation".into()))
+}
+
 fn set_zoom(xml: &str, zoom: f32) -> Result<String> {
     replace_between(xml, "<ScoreZoom>", "</ScoreZoom>", &zoom.to_string())
         .ok_or_else(|| Error::Malformed("score has no ScoreZoom element".into()))

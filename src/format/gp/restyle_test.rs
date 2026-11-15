@@ -153,3 +153,10 @@ fn a_truncated_part_configuration_is_an_error() {
     };
     assert!(restyle(&bytes, &opts).is_err());
 }
+
+#[test]
+fn opening_tempo_is_the_first_tempo_automation() {
+    let xml = "<GPIF><Automation><Type>Other</Type><Value>9 2</Value></Automation>               <Automation><Type>Tempo</Type><Value>140 2</Value></Automation>               <Automation><Type>Tempo</Type><Value>90 2</Value></Automation></GPIF>";
+    assert_eq!(opening_tempo(&container(xml)).unwrap(), 140.0);
+    assert!(opening_tempo(&container("<GPIF/>")).is_err());
+}
