@@ -435,9 +435,8 @@ fn single_track_bar_onsets(doc: &Document, track_index: usize, bar_index: usize)
         return Vec::new();
     };
     let mut onsets = Vec::new();
-    for voice_index in 0..bar.voices.len() {
+    for (voice_index, voice) in bar.voices.iter().enumerate() {
         let positions = beat_positions(doc, bar_index, track_index, voice_index);
-        let voice = &bar.voices[voice_index];
         for position in positions {
             let Some(beat) = voice.beats.get(position.beat_index) else {
                 continue;

@@ -65,8 +65,13 @@ fn note_indices(
             let Some(bar) = doc.bars.iter().position(|bar| bar.id == id as u32) else {
                 continue;
             };
-            for voice in 0..doc.bars[bar].voices.len() {
-                for beat in 0..doc.bars[bar].voices[voice].beats.len() {
+            for (voice, beats) in doc.bars[bar]
+                .voices
+                .iter()
+                .map(|v| v.beats.len())
+                .enumerate()
+            {
+                for beat in 0..beats {
                     result.push((track_index, bar_index, bar, voice * 1_000_000 + beat));
                 }
             }
