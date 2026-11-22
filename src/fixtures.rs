@@ -19,13 +19,21 @@ pub const TUNING_BASS: [i32; 4] = [28, 33, 38, 43];
 
 /// General MIDI percussion numbers used by the drum fixtures.
 pub mod drum {
+    /// General MIDI percussion number: bass drum (kick).
     pub const KICK: i32 = 36;
+    /// General MIDI percussion number: acoustic snare.
     pub const SNARE: i32 = 38;
+    /// General MIDI percussion number: closed hi-hat.
     pub const HAT_CLOSED: i32 = 42;
+    /// General MIDI percussion number: open hi-hat.
     pub const HAT_OPEN: i32 = 46;
+    /// General MIDI percussion number: ride cymbal.
     pub const RIDE: i32 = 51;
+    /// General MIDI percussion number: crash cymbal.
     pub const CRASH: i32 = 49;
+    /// General MIDI percussion number: high tom.
     pub const TOM_HIGH: i32 = 48;
+    /// General MIDI percussion number: floor tom.
     pub const TOM_FLOOR: i32 = 41;
 }
 

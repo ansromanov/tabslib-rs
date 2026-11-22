@@ -19,7 +19,14 @@ pub enum PitchError {
     /// A track or bar selection was outside the document.
     InvalidSelection(String),
     /// A note would require a negative fret or a string not present in the tuning.
-    Unplayable { track: usize, bar: usize, note: u32 },
+    Unplayable {
+        /// Zero-based track index.
+        track: usize,
+        /// Zero-based bar index.
+        bar: usize,
+        /// Index of the note within the bar.
+        note: u32,
+    },
     /// A target tuning is empty or contains an invalid pitch.
     InvalidTuning,
     /// The requested named tuning preset does not exist.

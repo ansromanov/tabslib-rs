@@ -8,9 +8,13 @@ use crate::{Error, Result};
 /// Named, style-neutral transform families.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Archetype {
+    /// Guitar transforms.
     Guitar,
+    /// Bass transforms.
     Bass,
+    /// Drum transforms.
     Drums,
+    /// Solo transforms.
     Solo,
 }
 

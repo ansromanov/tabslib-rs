@@ -25,7 +25,14 @@ pub enum SelectionError {
     /// A selection index or range is invalid.
     InvalidSelection(String),
     /// Re-fingering would require an unavailable or negative fret.
-    Unplayable { track: usize, bar: usize, note: u32 },
+    Unplayable {
+        /// Zero-based track index.
+        track: usize,
+        /// Zero-based bar index.
+        bar: usize,
+        /// Index of the note within the bar.
+        note: u32,
+    },
     /// An edit produced an over-full voice.
     Overfull(Vec<crate::inspect::BarIntegrity>),
 }

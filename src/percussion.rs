@@ -1,8 +1,8 @@
 //! Standard General MIDI percussion articulation mapping.
 
-/// Coarse role of a percussion instrument in a standard kit.
 use serde::{Deserialize, Serialize};
 
+/// Coarse role of a percussion instrument in a standard kit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum DrumRole {
     /// Bass drum or kick.

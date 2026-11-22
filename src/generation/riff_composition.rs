@@ -99,7 +99,12 @@ pub enum RiffCompositionError {
     InvalidInput(String),
     /// A source could not be transposed into the requested key.
     #[error("could not transpose source {label}: {reason}")]
-    Transposition { label: String, reason: String },
+    Transposition {
+        /// Label of the source that failed.
+        label: String,
+        /// Why the transposition failed.
+        reason: String,
+    },
 }
 
 /// Computes pairwise bar compatibility between two documents.

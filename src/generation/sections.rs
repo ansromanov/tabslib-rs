@@ -322,10 +322,20 @@ pub enum SectionAnalysisError {
     InvalidThreshold,
     /// A boundary must begin after the first bar and before the end of the score.
     #[error("boundary at bar {bar_index} is outside a {bar_count}-bar score")]
-    InvalidBoundary { bar_index: usize, bar_count: usize },
+    InvalidBoundary {
+        /// Zero-based bar index of the boundary.
+        bar_index: usize,
+        /// Number of bars in the score.
+        bar_count: usize,
+    },
     /// A supplied label count must match the number of boundary proposals.
     #[error("received {labels} labels for {boundaries} section boundaries")]
-    MarkerLabelCount { boundaries: usize, labels: usize },
+    MarkerLabelCount {
+        /// Number of section boundaries proposed.
+        boundaries: usize,
+        /// Number of labels supplied.
+        labels: usize,
+    },
     /// Marker labels cannot be empty.
     #[error("section marker label cannot be empty")]
     EmptyMarkerLabel,

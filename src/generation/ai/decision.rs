@@ -21,8 +21,11 @@ pub struct DecisionRequest {
 /// Where a resolved answer came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DecisionSource {
+    /// The answer was served from the cache.
     Cache,
+    /// The answer came from the provider.
     Provider,
+    /// The answer came from the fallback after the provider failed.
     Fallback,
 }
 

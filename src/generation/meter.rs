@@ -157,27 +157,42 @@ impl BeatGrouping {
 pub enum BeatGroupingError {
     /// Time-signature numerator and denominator must be positive.
     #[error("invalid meter {meter:?}")]
-    InvalidMeter { meter: (u32, u32) },
+    InvalidMeter {
+        /// Time signature as `(numerator, denominator)`.
+        meter: (u32, u32),
+    },
     /// No default grouping is defined for this time signature.
     #[error("no default beat grouping is defined for meter {meter:?}")]
-    UnsupportedMeter { meter: (u32, u32) },
+    UnsupportedMeter {
+        /// Time signature as `(numerator, denominator)`.
+        meter: (u32, u32),
+    },
     /// Groups must be positive and sum to the time-signature numerator.
     #[error("groups {groups:?} do not form meter {meter:?}")]
-    InvalidGroups { meter: (u32, u32), groups: Vec<u32> },
+    InvalidGroups {
+        /// Time signature as `(numerator, denominator)`.
+        meter: (u32, u32),
+        /// Supplied group sizes.
+        groups: Vec<u32>,
+    },
     /// Grid resolution must be positive.
     #[error("subdivisions per quarter must be positive")]
     InvalidSubdivision,
     /// One denominator unit does not land on an integer grid step.
     #[error("meter {meter:?} cannot be grouped on a grid with {subdivisions_per_quarter} subdivisions per quarter")]
     UnrepresentableUnit {
+        /// Time signature as `(numerator, denominator)`.
         meter: (u32, u32),
+        /// Grid subdivisions per quarter note.
         subdivisions_per_quarter: u32,
     },
     /// A grouping and grid have different time signatures.
     #[cfg(feature = "drums")]
     #[error("beat grouping meter {grouping_meter:?} does not match grid meter {grid_meter:?}")]
     GridMeterMismatch {
+        /// Meter of the beat grouping as `(numerator, denominator)`.
         grouping_meter: (u32, u32),
+        /// Meter of the pattern grid as `(numerator, denominator)`.
         grid_meter: (u32, u32),
     },
     /// Pattern-grid validation failed.

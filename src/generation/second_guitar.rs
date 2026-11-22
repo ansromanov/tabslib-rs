@@ -109,7 +109,10 @@ pub enum SecondGuitarError {
     InvalidSource(usize),
     /// The document already reaches the fretted-track limit H6.
     #[error("adding a second guitar would exceed H6: {count} fretted tracks already exist")]
-    TrackLimit { count: usize },
+    TrackLimit {
+        /// Number of fretted tracks already in the document.
+        count: usize,
+    },
     /// Tuning, fret range, or selected key is invalid.
     #[error("invalid second-guitar tuning, fret window, or key")]
     InvalidConfig,
@@ -118,7 +121,12 @@ pub enum SecondGuitarError {
     EmptySource(usize),
     /// A requested pitch cannot be fingered in the output window.
     #[error("role {role:?} cannot place pitch {pitch} in the configured fret window")]
-    Unplayable { role: GuitarRole, pitch: i32 },
+    Unplayable {
+        /// The guitar role being generated.
+        role: GuitarRole,
+        /// MIDI pitch that cannot be placed.
+        pitch: i32,
+    },
     /// A source bar reference is invalid.
     #[error("source or generated bar is missing at bar {0}")]
     MissingBar(usize),

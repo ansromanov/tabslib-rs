@@ -286,7 +286,10 @@ pub struct SeededGrooveFallback<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MidiGrooveSource {
     /// A groove selected from the caller's in-memory index.
-    Indexed { groove_id: String },
+    Indexed {
+        /// Stable identifier of the selected groove.
+        groove_id: String,
+    },
     /// The explicit seeded fallback supplied by the caller.
     SeededFallback,
 }
@@ -599,15 +602,21 @@ pub enum MidiGrooveError {
     InvalidTempo,
     /// The index already contains this stable identifier.
     #[error("MIDI groove identifier {id:?} is already indexed")]
-    DuplicateId { id: String },
+    DuplicateId {
+        /// The identifier that is already indexed.
+        id: String,
+    },
     /// The score has no recognized General MIDI percussion notes.
     #[error("MIDI file contains no recognized General MIDI drum notes")]
     NoDrumNotes,
     /// No indexed groove matches the requested role and meter.
     #[error("no MIDI groove matches role {role:?}, meter {meter:?}, near {tempo_bpm} BPM")]
     NoMatchingGroove {
+        /// Requested role.
         role: String,
+        /// Requested meter as `(numerator, denominator)`.
         meter: (u32, u32),
+        /// Requested tempo in beats per minute.
         tempo_bpm: u32,
     },
     /// The existing MIDI reader rejected the supplied bytes.
@@ -618,10 +627,20 @@ pub enum MidiGrooveError {
     InvalidGrid(String),
     /// An onset cannot be placed exactly on the requested grid.
     #[error("MIDI onset {numerator}/{denominator} cannot be represented on the selected grid")]
-    UnrepresentableOnset { numerator: u64, denominator: u64 },
+    UnrepresentableOnset {
+        /// Numerator of the onset position as a fraction of a bar.
+        numerator: u64,
+        /// Denominator of the onset position as a fraction of a bar.
+        denominator: u64,
+    },
     /// A source event cannot be represented at the requested grid resolution.
     #[error("MIDI event at bar {bar}, step {step} cannot be represented on the target grid")]
-    UnrepresentableGridStep { bar: usize, step: u32 },
+    UnrepresentableGridStep {
+        /// Zero-based bar of the source event.
+        bar: usize,
+        /// Zero-based grid step of the source event within its bar.
+        step: u32,
+    },
     /// Checked grid arithmetic exceeded its integer range.
     #[error("MIDI groove grid arithmetic overflowed")]
     GridOverflow,

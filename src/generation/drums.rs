@@ -110,23 +110,41 @@ pub struct DrumPattern {
 
 /// General MIDI drum voices used by the performance solver.
 pub mod voices {
+    /// General MIDI percussion number: acoustic bass drum.
     pub const ACOUSTIC_BASS_DRUM: u8 = 36;
+    /// General MIDI percussion number: acoustic snare.
     pub const ACOUSTIC_SNARE: u8 = 38;
+    /// General MIDI percussion number: side stick.
     pub const SIDE_STICK: u8 = 37;
+    /// General MIDI percussion number: pedal hi-hat.
     pub const PEDAL_HI_HAT: u8 = 44;
+    /// General MIDI percussion number: closed hi-hat.
     pub const CLOSED_HI_HAT: u8 = 42;
+    /// General MIDI percussion number: open hi-hat.
     pub const OPEN_HI_HAT: u8 = 46;
+    /// General MIDI percussion number: low floor tom.
     pub const LOW_FLOOR_TOM: u8 = 41;
+    /// General MIDI percussion number: low tom.
     pub const LOW_TOM: u8 = 45;
+    /// General MIDI percussion number: low-mid tom.
     pub const LOW_MID_TOM: u8 = 47;
+    /// General MIDI percussion number: high-mid tom.
     pub const HI_MID_TOM: u8 = 48;
+    /// General MIDI percussion number: high tom.
     pub const HIGH_TOM: u8 = 50;
+    /// General MIDI percussion number: high floor tom.
     pub const HIGH_FLOOR_TOM: u8 = 43;
+    /// General MIDI percussion number: crash cymbal 1.
     pub const CRASH_CYMBAL_1: u8 = 49;
+    /// General MIDI percussion number: crash cymbal 2.
     pub const CRASH_CYMBAL_2: u8 = 57;
+    /// General MIDI percussion number: chinese cymbal.
     pub const CHINESE_CYMBAL: u8 = 52;
+    /// General MIDI percussion number: splash cymbal.
     pub const SPLASH_CYMBAL: u8 = 55;
+    /// General MIDI percussion number: ride cymbal 1.
     pub const RIDE_CYMBAL_1: u8 = 51;
+    /// General MIDI percussion number: ride bell.
     pub const RIDE_BELL: u8 = 53;
 }
 

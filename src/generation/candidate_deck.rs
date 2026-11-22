@@ -161,7 +161,12 @@ pub enum DeckError {
     InvalidRequest,
     /// Too few candidates satisfy the requested minimum pairwise distance.
     #[error("could select only {available} candidates; {requested} were requested")]
-    InsufficientCandidates { requested: usize, available: usize },
+    InsufficientCandidates {
+        /// Number of candidates requested.
+        requested: usize,
+        /// Number of candidates that satisfied the minimum distance.
+        available: usize,
+    },
 }
 
 /// A deterministic deck with forward and backward page navigation.
