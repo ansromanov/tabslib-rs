@@ -51,7 +51,7 @@ cargo add tabslib --git https://github.com/ansromanov/tabslib-rs --features midi
 ## The `tabs` command-line tool
 
 The repository also ships `tabs`, a small CLI for everyday score chores
-(`info`, `tab`, `transpose`, `slice`, `midi`):
+(`info`, `tab`, `diff`, `transpose`, `retune`, `slice`, `append`, `section`, `silence`, `drop-track`, `midi`):
 
 ```sh
 cargo install --git https://github.com/ansromanov/tabslib-rs tabs

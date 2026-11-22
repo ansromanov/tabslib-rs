@@ -80,7 +80,7 @@ cargo add tabslib --git https://github.com/ansromanov/tabslib-rs
 cargo add tabslib --git https://github.com/ansromanov/tabslib-rs --features midi,musicxml,ai-anthropic
 ```
 
-The `tabs` command-line tool (`info`, `tab`, `transpose`, `slice`, `midi`):
+The `tabs` command-line tool (`info`, `tab`, `diff`, `transpose`, `retune`, `slice`, `append`, `section`, `silence`, `drop-track`, `midi`):
 
 ```sh
 cargo install --git https://github.com/ansromanov/tabslib-rs tabs
