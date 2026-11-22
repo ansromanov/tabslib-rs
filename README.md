@@ -1,7 +1,7 @@
 # tabslib
 
 [![CI](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml)
-[![License: FSL-1.1-MIT](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](LICENSE.md)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 ![MSRV](https://img.shields.io/badge/rust-1.85%2B-orange)
 
 A general-purpose tablature and deterministic music-generation library for Rust.
@@ -193,7 +193,9 @@ only to describe what this library can read and write.
 
 ## License
 
-[Functional Source License, Version 1.1, MIT Future License](LICENSE.md)
-(FSL-1.1-MIT). You may use, modify and redistribute the software for any purpose
-except a competing commercial product or service. Each version becomes
-available under the MIT license two years after its release.
+Copyright 2026 Andrei Romanov.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE).
