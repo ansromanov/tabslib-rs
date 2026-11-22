@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+      - run: cargo fmt --manifest-path extras/Cargo.toml -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets --all-features --locked -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Default features
+        run: cargo test --locked
+      - name: All features
+        run: cargo test --all-features --locked
+
+  # Each AI connector must build on its own, without the others.
+  connectors:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature: [ai, ai-anthropic, ai-openai-compatible, ai-gemini, ai-ollama]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.feature }}
+      - run: cargo check --all-targets --locked --features ${{ matrix.feature }}
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --no-deps --all-features --locked
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  # The core must build without any format adapter.
+  core-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --no-default-features --locked
+      - name: No format dependency without its feature
+        run: |
+          if cargo tree --no-default-features -e normal --prefix none | grep -qE '^(zip|quick-xml) '; then
+            echo "a format dependency is reachable without its feature"
+            exit 1
+          fi
+
+  # rust-version applies to everything except the HTTP connectors, whose
+  # transport needs Rust 1.88.
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --locked --features midi,musicxml,wav,ai
+
+  extras:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: extras
+      - run: cargo test --manifest-path extras/Cargo.toml --locked
+      - run: cargo clippy --manifest-path extras/Cargo.toml --all-targets --locked -- -D warnings
+
+  # Single required status for branch protection.
+  ci:
+    if: always()
+    needs: [fmt, clippy, test, connectors, doc, core-only, msrv, extras]
+    runs-on: ubuntu-latest
+    steps:
+      - run: test '${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}' = 'false'

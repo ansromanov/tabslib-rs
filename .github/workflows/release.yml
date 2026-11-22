@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version tag
+        run: '[[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]'
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff@2.14.0
+
+      - name: Verify package version matches the tag
+        run: |
+          package_version="$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)"
+          if [[ "$package_version" != "${GITHUB_REF_NAME#v}" ]]; then
+            echo "Cargo.toml version $package_version does not match $GITHUB_REF_NAME" >&2
+            exit 1
+          fi
+
+      - name: Generate changelog and release notes
+        run: |
+          git-cliff --offline --tag "$GITHUB_REF_NAME" --output CHANGELOG.md
+          git-cliff --offline --tag "$GITHUB_REF_NAME" --strip header --output release-notes.md
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md CHANGELOG.md

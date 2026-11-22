@@ -1,0 +1,9 @@
+target/
+.DS_Store
+
+# Audio is never committed (generated, reproducible, and it bloated the clone).
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.aiff
