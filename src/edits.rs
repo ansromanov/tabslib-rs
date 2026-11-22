@@ -10,11 +10,13 @@ use crate::inspect::{bar_capacity, bar_integrity, rhythm_duration, Fraction};
 use crate::model::{Bar, Beat, Document, Note, Rhythm, Track, Voice};
 
 /// Error returned when an edit would leave an over-full voice or has invalid indices.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum EditError {
     /// A requested index or range is invalid.
+    #[error("invalid range: {0}")]
     InvalidRange(String),
     /// An edit introduced one or more over-full voices.
+    #[error("edit would leave {} over-full voice(s)", .0.len())]
     Overfull(Vec<crate::inspect::BarIntegrity>),
 }
 

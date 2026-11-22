@@ -14,22 +14,26 @@ pub use tuning::{
 };
 
 /// Failure raised when a requested retuning cannot represent a note on its string.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum PitchError {
     /// A track or bar selection was outside the document.
+    #[error("invalid selection: {0}")]
     InvalidSelection(String),
     /// A note would require a negative fret or a string not present in the tuning.
+    #[error("note {note} in track {track}, bar {bar} cannot be played in the target tuning")]
     Unplayable {
         /// Zero-based track index.
         track: usize,
-        /// Zero-based bar index.
+        /// Zero-based master-bar index.
         bar: usize,
-        /// Index of the note within the bar.
+        /// Id of the note that cannot be placed.
         note: u32,
     },
     /// A target tuning is empty or contains an invalid pitch.
+    #[error("target tuning is empty or contains an invalid pitch")]
     InvalidTuning,
     /// The requested named tuning preset does not exist.
+    #[error(transparent)]
     UnknownTuningPreset(TuningPresetError),
 }
 
