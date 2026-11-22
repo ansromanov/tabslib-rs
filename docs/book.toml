@@ -1,0 +1,11 @@
+[book]
+title = "tabslib"
+description = "A tablature and deterministic music-generation library for Rust"
+authors = ["Andrei Romanov"]
+language = "en"
+src = "src"
+
+[output.html]
+git-repository-url = "https://github.com/ansromanov/tabslib-rs"
+edit-url-template = "https://github.com/ansromanov/tabslib-rs/edit/main/docs/{path}"
+site-url = "/tabslib-rs/"

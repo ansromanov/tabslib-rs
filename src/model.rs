@@ -1,11 +1,11 @@
 //! The document model.
 //!
-//! Two rules carried over from the TypeScript engine's defect history:
+//! Two rules shape it:
 //!
-//! 1. **Rhythm is never a float.** Collapsing a duration to `f64` is how the
-//!    previous writer turned 5072 eighths, 2377 sixteenths and 524 triplets into
-//!    9229 quarter notes: anything not in a lookup table silently became a
-//!    quarter. `Rhythm` here keeps the written value, the dots and the tuplet
+//! 1. **Rhythm is never a float.** Collapsing a duration to `f64` and looking
+//!    it up in a table needs a fallback for values that miss, and that fallback
+//!    silently turns eighths, sixteenths and triplets into quarter notes while
+//!    the note count stays correct. `Rhythm` here keeps the written value, the dots and the tuplet
 //!    separately, so a value that cannot be represented is a compile-time or
 //!    parse-time problem rather than a silent quarter note.
 //!

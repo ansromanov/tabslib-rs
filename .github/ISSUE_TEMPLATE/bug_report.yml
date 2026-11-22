@@ -1,0 +1,29 @@
+name: Bug report
+description: Something reads, writes, edits or generates incorrectly
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: >-
+        A minimal snippet, ideally built with `tabslib::fixtures`. Please do not
+        attach score files of music you did not write.
+      render: rust
+  - type: input
+    id: version
+    attributes:
+      label: tabslib revision and features
+      placeholder: "commit abc1234, features = [\"midi\"]"
+  - type: input
+    id: rust
+    attributes:
+      label: Rust version
+      placeholder: "rustc 1.88.0"

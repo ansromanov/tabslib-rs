@@ -7,3 +7,6 @@ target/
 *.flac
 *.ogg
 *.aiff
+
+# mdBook output
+docs/book/
