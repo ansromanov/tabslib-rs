@@ -38,6 +38,7 @@ third-party musical content and no copyrighted reference texts, ever.
 
 ## License of contributions
 
-The project is licensed under the [GNU GPL, version 3 or later](LICENSE). By
-submitting a pull request you agree that your contribution is licensed under the
-same terms.
+The project is dual-licensed under [MIT](LICENSE-MIT) or
+[Apache-2.0](LICENSE-APACHE), at your option. Unless you explicitly state
+otherwise, any contribution you submit for inclusion is dual-licensed the same
+way, without additional terms or conditions.
