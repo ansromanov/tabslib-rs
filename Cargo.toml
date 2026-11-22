@@ -6,9 +6,23 @@ rust-version = "1.88"
 description = "A general-purpose tablature and music-generation library with an immutable document model, codecs, analysis, and deterministic edits."
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ansromanov/tabslib-rs"
+homepage = "https://ansromanov.github.io/tabslib-rs/"
+documentation = "https://docs.rs/tabslib"
+readme = "README.md"
 keywords = ["tablature", "notation", "music", "score", "fretboard"]
 categories = ["parser-implementations", "multimedia::audio"]
-publish = false
+include = [
+    "/src/**",
+    "/tests/**",
+    "/examples/**",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE-MIT",
+    "/LICENSE-APACHE",
+]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
