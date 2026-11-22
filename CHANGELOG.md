@@ -3,7 +3,7 @@
 All notable changes are recorded here. Releases are cut from Conventional
 Commits with `git-cliff`; see [releases](docs/src/releases.md).
 
-## Unreleased
+## 0.1.0 - 2026-11-22
 
 ### Features
 
@@ -21,7 +21,7 @@ Commits with `git-cliff`; see [releases](docs/src/releases.md).
 ### Documentation
 
 - Every public item is documented and `missing_docs` is enforced (#4).
-- The tabslib book and API reference on GitHub Pages.
+- The tabslib book and API reference on GitHub Pages (#5).
 
 ### Licensing
 

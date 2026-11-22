@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Status
 
-**0.1, pre-release.** Everything above is implemented and covered by more than
+**0.1.0.** Everything above is implemented and covered by more than
 500 tests, clippy runs with warnings denied, and every public item is documented.
 The API may still change before 1.0, and the crate is not yet on crates.io.
 See the [roadmap](ROADMAP.md) for what comes next.

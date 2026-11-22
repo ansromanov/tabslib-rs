@@ -16,8 +16,7 @@ or in `Cargo.toml`:
 tabslib = { git = "https://github.com/ansromanov/tabslib-rs" }
 ```
 
-Pin a revision with `rev = "<commit>"` or, once releases are tagged,
-`tag = "v0.1.0"`.
+Pin a release with `tag = "v0.1.0"`, or a revision with `rev = "<commit>"`.
 
 ## Choosing features
 

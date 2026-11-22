@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: 0.1, pre-release.** Everything listed under *Done* is implemented and
+**Status: 0.1.0.** Everything listed under *Done* is implemented and
 tested. The public API may still change before 1.0, and the crate is not yet on
 crates.io.
 
@@ -9,14 +9,7 @@ assessment. A feature belongs here when it can be specified without naming a
 genre, a band, or a statistic measured over a collection of music. Style
 profiles and reference values are inputs from the caller, never compiled in.
 
-## Next — 0.1.0 release
-
-- [ ] Document every public item and enforce it with `missing_docs`.
-- [ ] Implement `std::error::Error` for every public error type.
-- [ ] Publish this book and the rustdoc API reference on GitHub Pages.
-- [ ] Tag `v0.1.0` with a generated changelog.
-
-## Later
+## Next
 
 - [ ] Publish to crates.io.
 - [ ] `# Errors` sections on every fallible public function.
@@ -26,6 +19,13 @@ profiles and reference values are inputs from the caller, never compiled in.
       automations.
 
 ## Done
+
+### 0.1.0 release
+
+- [x] Every public item documented; `missing_docs` enforced.
+- [x] `std::error::Error` for every public error type.
+- [x] This book and the rustdoc API reference on GitHub Pages.
+- [x] `v0.1.0` tagged with a generated changelog.
 
 ### Notation and codecs
 
