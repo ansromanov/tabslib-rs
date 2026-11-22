@@ -254,8 +254,8 @@ pub fn map_pitch_class(pitch_class: i32, from: KeySignature, to: KeySignature) -
 ///
 /// Returns [`PitchError::UnknownTuningPreset`] if a named target is not a preset,
 /// [`PitchError::InvalidTuning`] if the tuning is empty or has a pitch outside 0..=127,
-/// [`PitchError::InvalidSelection`] if the document has no bars, and [`PitchError::Unplayable`]
-/// if a note cannot be placed on its string in the new tuning.
+/// [`PitchError::InvalidSelection`] if the document has no bars or `track` is outside it, and
+/// [`PitchError::Unplayable`] if a note cannot be placed on its string in the new tuning.
 pub fn retune_preserve_pitch<'a>(
     doc: &mut Document,
     track: usize,
@@ -272,6 +272,9 @@ pub fn retune_preserve_pitch<'a>(
         .len()
         .checked_sub(1)
         .ok_or_else(|| PitchError::InvalidSelection("empty document".into()))?;
+    if track >= doc.tracks.len() {
+        return Err(PitchError::InvalidSelection("track index".into()));
+    }
     if is_percussion(doc, track) {
         return Ok(());
     }
@@ -296,8 +299,8 @@ pub fn retune_preserve_pitch<'a>(
 ///
 /// Returns [`PitchError::UnknownTuningPreset`] if a named target is not a preset,
 /// [`PitchError::InvalidTuning`] if the tuning is empty or has a pitch outside 0..=127,
-/// [`PitchError::InvalidSelection`] if the document has no bars, and [`PitchError::Unplayable`]
-/// if a note cannot be placed on its string in the new tuning.
+/// [`PitchError::InvalidSelection`] if the document has no bars or `track` is outside it, and
+/// [`PitchError::Unplayable`] if a note cannot be placed on its string in the new tuning.
 pub fn retune_preserve_fingering<'a>(
     doc: &mut Document,
     track: usize,
@@ -314,6 +317,9 @@ pub fn retune_preserve_fingering<'a>(
         .len()
         .checked_sub(1)
         .ok_or_else(|| PitchError::InvalidSelection("empty document".into()))?;
+    if track >= doc.tracks.len() {
+        return Err(PitchError::InvalidSelection("track index".into()));
+    }
     if is_percussion(doc, track) {
         return Ok(());
     }
