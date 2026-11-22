@@ -22,21 +22,42 @@ impl WriteFormat for Html {
 }
 
 /// Renders every track and bar as a standalone HTML document.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if a master bar has no entry for a track or refers to a
+/// bar that does not exist.
 pub fn render_score(doc: &Document) -> Result<String> {
     render(&tab::all(doc)?)
 }
 
 /// Renders every track in an inclusive master-bar range.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `start > end` or `end` is past the last master bar, or
+/// if a bar in the range is missing for a track or refers to a bar that does not exist.
 pub fn render_score_range(doc: &Document, start: usize, end: usize) -> Result<String> {
     render(&tab::range(doc, None, start, end)?)
 }
 
 /// Renders one track and every bar as a standalone HTML document.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `track` is not a track of `doc`, or if a master bar has
+/// no entry for the track or refers to a bar that does not exist.
 pub fn render_track(doc: &Document, track: usize) -> Result<String> {
     render(&tab::track(doc, track)?)
 }
 
 /// Renders one track in an inclusive master-bar range.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `track` is not a track of `doc`, if `start > end` or
+/// `end` is past the last master bar, or if a bar in the range is missing for the track or
+/// refers to a bar that does not exist.
 pub fn render_track_range(
     doc: &Document,
     track: usize,

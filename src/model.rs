@@ -400,12 +400,22 @@ impl Document {
     }
 
     /// Encodes this document in the versioned native JSON format.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if the document fails validation or cannot be
+    /// encoded as JSON.
     #[cfg(feature = "json")]
     pub fn to_json(&self) -> Result<String, crate::Error> {
         crate::serialization::encode(self)
     }
 
     /// Decodes and validates a document from the versioned native JSON format.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if the JSON is invalid, names an unsupported format or
+    /// schema version, or the decoded document fails validation.
     #[cfg(feature = "json")]
     pub fn from_json(json: &str) -> Result<Self, crate::Error> {
         crate::serialization::decode(json)

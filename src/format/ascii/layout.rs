@@ -414,7 +414,10 @@ fn connect(bars: &mut [BarLayout], line_count: usize) {
 
 /// Lays out one track over the inclusive master-bar range `start..=end`.
 ///
-/// Errors when the track or range is outside the document.
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `track` is not a track of `doc`, or if `start > end` or
+/// `end` is past the last master bar.
 pub fn layout_track(
     doc: &Document,
     track: usize,

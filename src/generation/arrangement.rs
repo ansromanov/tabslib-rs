@@ -186,12 +186,22 @@ impl ArrangementPlan {
     }
 
     /// Serializes this plan as pretty JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ArrangementError::Serialization`] if the plan cannot be encoded as JSON.
     pub fn to_json(&self) -> Result<String, ArrangementError> {
         serde_json::to_string_pretty(self)
             .map_err(|error| ArrangementError::Serialization(error.to_string()))
     }
 
     /// Parses and validates a JSON arrangement plan.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ArrangementError::Serialization`] if `json` is not a valid plan, and
+    /// [`ArrangementError::InvalidInput`] if the plan version is not 1, it has no sections,
+    /// `motif_max_bars` is zero, or `motif_threshold` is not a finite value in `0..=1`.
     pub fn from_json(json: &str) -> Result<Self, ArrangementError> {
         let plan: Self = serde_json::from_str(json)
             .map_err(|error| ArrangementError::Serialization(error.to_string()))?;
@@ -262,6 +272,11 @@ pub enum ArrangementError {
 }
 
 /// Fingerprints the content of one master bar across its tracks.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if `bar_index` is outside the score, the bar
+/// does not have one bar reference per track, or a reference names a missing bar.
 pub fn fingerprint_bar(
     doc: &Document,
     bar_index: usize,
@@ -347,6 +362,11 @@ pub fn fingerprint_bar(
 ///
 /// Regions split when adjacent-bar compatibility drops below `threshold` or
 /// `max_bars` is reached. Thresholds are clamped to `0..=1`.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if `max_bars` is zero, and any error from
+/// [`fingerprint_bar`] if a bar cannot be fingerprinted.
 pub fn segment_motifs(
     doc: &Document,
     max_bars: usize,
@@ -409,6 +429,11 @@ pub fn score_compatibility(left: &MotifFingerprint, right: &MotifFingerprint) ->
 }
 
 /// Checks whether adjacent bars can be joined without repairing timing.
+///
+/// # Errors
+///
+/// Returns any error from [`fingerprint_bar`] if `left_bar` or `right_bar` is outside the
+/// score or refers to malformed bar data.
 pub fn check_join(
     doc: &Document,
     left_bar: usize,
@@ -439,6 +464,15 @@ pub fn check_join(
 /// Candidate ties are resolved with `seed`; identical inputs and seed always
 /// produce an identical document. Motifs repeat from their first bar to fill
 /// the requested section length. Every copied rhythmic value is preserved.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if there are no sections, more than one is
+/// marked as the climax, a section requests zero bars or has no candidates, a candidate
+/// motif index or range is outside `motifs` or the score, no candidate can take the
+/// section's transposition, or a source bar reference is missing. Returns
+/// [`ArrangementError::OverfullBar`] if a copied voice still exceeds its destination bar,
+/// and [`ArrangementError::InvalidTransposition`] if a transposition cannot be represented.
 pub fn compose_song(
     source: &Document,
     motifs: &[Motif],
@@ -605,6 +639,13 @@ pub fn compose_song(
 }
 
 /// Assembles and applies a reviewed arrangement plan.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if the plan version is not 1 or its
+/// section settings are invalid (energy above 100, an instrumentation track that does not
+/// exist, or an invalid energy texture). Otherwise returns any error from [`compose_song`]
+/// or from applying the plan's transitions.
 pub fn compose_plan(
     source: &Document,
     motifs: &[Motif],
@@ -849,6 +890,12 @@ fn add_octave_doubling(
 /// The seed selects among valid `-12`, `0`, and `+12` semitone transforms.
 /// Transposition updates sounding pitches and fretted positions together. The
 /// document is unchanged if the requested range is invalid.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if `start_bar > end_bar`, `end_bar` is outside
+/// the score, or none of the `-12`, `0` and `+12` transforms can be applied to the range.
+/// Returns [`ArrangementError::InvalidTransposition`] if the chosen transposition fails.
 pub fn apply_seeded_variation(
     doc: &mut Document,
     start_bar: usize,

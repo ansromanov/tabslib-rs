@@ -151,6 +151,14 @@ impl AiConfig {
     }
 
     /// Builds the configured connector.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::MissingApiKey`] if a connector that needs a key has none
+    /// configured or in its environment variable, [`ProviderConfigError::EmptyModel`] if a required
+    /// model is missing or blank, and [`ProviderConfigError::MissingEndpoint`] if an
+    /// OpenAI-compatible config has no endpoint. Also returns any error from the chosen provider's
+    /// constructor and `with_*` methods, such as an empty endpoint or invalid [`ProviderOptions`].
     pub fn build(&self) -> Result<Box<dyn RationaleProvider>, ProviderConfigError> {
         match self.connector {
             #[cfg(feature = "ai-ollama")]

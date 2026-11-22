@@ -21,6 +21,11 @@ pub struct OllamaProvider {
 
 impl OllamaProvider {
     /// Creates an adapter for the local Ollama service and selected model.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyModel`] if `model` is blank, and
+    /// [`ProviderConfigError::ClientInitialization`] if the HTTP client cannot be built.
     pub fn new(model: impl Into<String>) -> Result<Self, ProviderConfigError> {
         let endpoint = "http://localhost:11434/api/chat".to_string();
         let model = model.into();
@@ -36,6 +41,10 @@ impl OllamaProvider {
     }
 
     /// Adds an optional bearer token for hosted Ollama endpoints.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyApiKey`] if `api_key` is blank.
     pub fn with_api_key(mut self, api_key: impl Into<String>) -> Result<Self, ProviderConfigError> {
         let api_key = api_key.into();
         super::validate_api_key(&api_key)?;
@@ -44,6 +53,10 @@ impl OllamaProvider {
     }
 
     /// Uses a custom Ollama-compatible chat endpoint.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyEndpoint`] if `endpoint` is blank.
     pub fn with_endpoint(
         mut self,
         endpoint: impl Into<String>,
@@ -55,6 +68,12 @@ impl OllamaProvider {
     }
 
     /// Uses a different request timeout and retry policy.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::InvalidTimeout`] if the timeout is zero,
+    /// [`ProviderConfigError::TooManyRetries`] if `max_retries` exceeds five, and
+    /// [`ProviderConfigError::ClientInitialization`] if the HTTP client cannot be built.
     pub fn with_options(mut self, options: ProviderOptions) -> Result<Self, ProviderConfigError> {
         self.client = client(options)?;
         self.options = options;

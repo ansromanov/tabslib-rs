@@ -57,6 +57,10 @@ where
     F: FnMut(&DecisionRequest) -> Result<Value, String>,
 {
     /// Requests one choice from the callback.
+    ///
+    /// # Errors
+    ///
+    /// Returns the callback's error string unchanged if it cannot produce a choice.
     pub fn decide(&mut self, request: &DecisionRequest) -> Result<Value, String> {
         (self.callback)(request)
     }
@@ -79,8 +83,20 @@ pub enum DecisionStoreError {
 /// A storage backend for cached decisions.
 pub trait DecisionStore {
     /// Reads a cached value by key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DecisionStoreError`] if the backend cannot read the cached value; for
+    /// [`FileDecisionStore`] that is an I/O failure other than a missing file, or invalid cached
+    /// JSON.
     fn get(&mut self, key: &str) -> Result<Option<Value>, DecisionStoreError>;
     /// Stores a value by key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DecisionStoreError`] if the backend cannot write the value; for
+    /// [`FileDecisionStore`] that is a failure creating the directory or writing the file, or a
+    /// JSON serialization failure.
     fn put(&mut self, key: &str, value: &Value) -> Result<(), DecisionStoreError>;
 }
 
@@ -139,6 +155,11 @@ pub fn decision_key(request: &DecisionRequest) -> String {
 }
 
 /// Resolves a decision from cache, provider, or a deterministic fallback.
+///
+/// # Errors
+///
+/// Returns [`DecisionStoreError`] if reading the cache or storing the resolved value fails. A
+/// provider error is not returned: it selects the fallback value instead.
 pub fn resolve_decision<S, P, F>(
     store: &mut S,
     request: &DecisionRequest,
@@ -186,6 +207,11 @@ pub fn rationale_prose_action_space() -> Vec<Value> {
 }
 
 /// Resolves a section decision through the shared cache and fallback path.
+///
+/// # Errors
+///
+/// Returns any [`DecisionStoreError`] from [`resolve_decision`]: a failed cache read or write. A
+/// provider error is not returned: it selects the fallback value instead.
 pub fn resolve_section_decisions<S, P>(
     store: &mut S,
     input: Value,
@@ -207,6 +233,11 @@ where
 }
 
 /// Resolves boundary decisions through the shared cache and fallback path.
+///
+/// # Errors
+///
+/// Returns any [`DecisionStoreError`] from [`resolve_decision`]: a failed cache read or write. A
+/// provider error is not returned: it selects the fallback value instead.
 pub fn resolve_boundary_decisions<S, P>(
     store: &mut S,
     input: Value,
@@ -228,6 +259,11 @@ where
 }
 
 /// Resolves rationale prose through the shared cache and fallback path.
+///
+/// # Errors
+///
+/// Returns any [`DecisionStoreError`] from [`resolve_decision`]: a failed cache read or write. A
+/// provider error is not returned: it selects the fallback value instead.
 pub fn resolve_rationale_prose<S, P>(
     store: &mut S,
     input: Value,

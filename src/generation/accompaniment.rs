@@ -161,6 +161,12 @@ pub struct DrumSectionRequest {
 /// `force` enabled matching tracks remain untouched and new generated tracks
 /// are appended alongside them. If generation fails, the input document is
 /// left unchanged.
+///
+/// # Errors
+///
+/// Returns the first error from any selected role's generator, for example
+/// [`crate::Error::Malformed`] for an invalid source track, bar range or configuration. On error
+/// `document` is left unchanged.
 pub fn generate_accompaniment(
     document: &mut Document,
     request: &AccompanimentRequest<'_>,
@@ -210,6 +216,11 @@ pub fn generate_accompaniment(
 /// The plan is checked against the document's bar span before generation. The
 /// shared seed and role-specific defaults make the result reproducible, while
 /// authored tracks remain in place alongside generated roles.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if the plan's section bars do not add up to the document's
+/// bar count. Otherwise returns any error from [`generate_accompaniment`].
 #[cfg(feature = "arrangement")]
 pub fn generate_full_song(
     document: &mut Document,

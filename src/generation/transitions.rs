@@ -108,6 +108,12 @@ pub fn plan_transitions(doc: &Document, rules: &[TransitionRule]) -> Vec<Section
 ///
 /// Fills and runs only occupy empty beats, preserving every written duration.
 /// Invalid track or bar references return an error without changing the input.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if a rule names a track outside the document, has a
+/// zero step count (or a zero bar count for an entry), or uses a drum fill on a non-percussion
+/// track. Also returns it if a transition's source bar, bar reference or voice is missing.
 pub fn apply_transitions(
     doc: &mut Document,
     rules: &[TransitionRule],

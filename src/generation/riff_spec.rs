@@ -205,6 +205,14 @@ impl RiffSpec {
 ///
 /// Validation never adjusts the specification. A caller that asked for a
 /// degree outside the mode needs to hear that, not receive a different riff.
+///
+/// # Errors
+///
+/// Returns [`RiffSpecError::NoBars`] or [`RiffSpecError::NoDegrees`] if `bars` or `degrees` is
+/// empty, and [`RiffSpecError::DegreeOutOfRange`] for a degree outside the scale. Returns
+/// [`RiffSpecError::TuningTooShort`] if the tuning has fewer strings than the voicing needs,
+/// [`RiffSpecError::InvalidTempo`] for a tempo that is not positive and finite, and
+/// [`RiffSpecError::UnreachableDegree`] if a degree's root cannot be fretted in range.
 pub fn validate(spec: &RiffSpec) -> Result<(), RiffSpecError> {
     if spec.bars == 0 {
         return Err(RiffSpecError::NoBars);
@@ -378,6 +386,10 @@ fn neighbour_degree(degree: u8) -> u8 {
 /// let riff = write_riff(&spec).expect("a realizable specification");
 /// assert_eq!(riff.master_bars.len(), 4);
 /// ```
+///
+/// # Errors
+///
+/// Returns any error from [`validate`] for the specification.
 pub fn write_riff(spec: &RiffSpec) -> Result<Document, RiffSpecError> {
     validate(spec)?;
     let mut rng = Rng::new(spec.seed);
@@ -628,6 +640,12 @@ pub struct MotifSpec {
 /// let motif = write_motif(&spec).expect("a realizable motif");
 /// assert_eq!(motif.master_bars.len(), 8);
 /// ```
+///
+/// # Errors
+///
+/// Returns any error from [`validate`] for the riff, or from [`write_riff`] for the statement or
+/// the answer. Returns [`RiffSpecError::Unbuildable`] if the answer cannot be appended to the
+/// statement.
 pub fn write_motif(spec: &MotifSpec) -> Result<Document, RiffSpecError> {
     validate(&spec.riff)?;
     let statement = spec.riff.clone();

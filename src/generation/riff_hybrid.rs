@@ -69,6 +69,15 @@ pub enum HybridError {
 /// Combines selected riffs. The inputs remain unchanged, and the same request
 /// always produces the same score. Both sources must share bar positions and
 /// meters so onsets can be transferred without shifting the song structure.
+///
+/// # Errors
+///
+/// Returns [`HybridError::InvalidTrack`] if a selected track is missing or not fretted,
+/// [`HybridError::DifferentBarCount`] or [`HybridError::IncompatibleMeter`] if the sources do not
+/// line up bar for bar, and [`HybridError::IncompatibleTuning`] if a mode that copies fingering
+/// is used with different tunings. Returns [`HybridError::NoPitchedNotes`] if the source of
+/// pitches has none, [`HybridError::MissingBar`] if a referenced bar is absent, and
+/// [`HybridError::UnplayablePitch`] if a contour pitch cannot be fretted on track A.
 pub fn hybridize(
     a: &Document,
     b: &Document,

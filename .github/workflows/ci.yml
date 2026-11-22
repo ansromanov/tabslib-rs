@@ -71,6 +71,9 @@ jobs:
       - run: cargo doc --no-deps --all-features --locked
         env:
           RUSTDOCFLAGS: -D warnings
+      - run: cargo doc --no-deps --no-default-features --locked
+        env:
+          RUSTDOCFLAGS: -D warnings
 
   # The core must build without any format adapter.
   core-only:

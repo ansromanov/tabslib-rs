@@ -74,6 +74,13 @@ pub struct CompiledPerformance {
 /// Missing bars and pitchless notes are rests. Unsupported dynamics, invalid
 /// pitches, invalid tempo values, and track counts that cannot fit MIDI
 /// channels return an error rather than silently changing the score.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if a tempo change names a missing bar or has a
+/// non-positive or non-finite value, a track program or note pitch is outside the MIDI range, a
+/// bar has a zero meter, a bar reference is missing or invalid, there are more than 15 pitched
+/// tracks, a dynamic is unsupported, or a rhythm or the score duration is invalid.
 pub fn compile_performance_events(document: &Document) -> Result<CompiledPerformance> {
     validate_tempos(document)?;
     let audible_tracks = audible_tracks(document);
@@ -259,6 +266,12 @@ pub fn compile_performance_events(document: &Document) -> Result<CompiledPerform
 }
 
 /// Renders a document to stereo 16-bit PCM WAV using the supplied SoundFont2 file.
+///
+/// # Errors
+///
+/// Returns any error from [`compile_performance_events`], [`crate::Error::Io`] if the SoundFont
+/// file cannot be opened, and [`crate::Error::Malformed`] if it is not valid SoundFont2 data, the
+/// synthesizer cannot be initialized, or the output is too long for a WAV file.
 pub fn render_pcm(document: &Document, soundfont: impl AsRef<Path>) -> Result<Vec<u8>> {
     let performance = compile_performance_events(document)?;
     validate_wav_length(performance.sample_count)?;

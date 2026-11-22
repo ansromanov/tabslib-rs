@@ -48,6 +48,11 @@ pub enum ContourError {
 /// Assigns section energy values from a caller-supplied contour.
 ///
 /// The input plan is not mutated. Values map one-to-one to section order.
+///
+/// # Errors
+///
+/// Returns [`ContourError::Length`] if `energies` does not have one value per section,
+/// and [`ContourError::EnergyOutOfRange`] if a value is above 100.
 pub fn apply_energy_contour(
     plan: &ArrangementPlan,
     energies: &[u8],
@@ -73,6 +78,14 @@ pub fn apply_energy_contour(
 /// `section_bars` and `tempos_bpm` map one-to-one and must cover the document.
 /// Tempo changes inside the covered range are replaced by the contour, while
 /// changes after the arrangement are preserved.
+///
+/// # Errors
+///
+/// Returns [`ContourError::InvalidBounds`] if `bounds` is not finite, positive and
+/// ordered, [`ContourError::Length`] if `section_bars` and `tempos_bpm` differ in length,
+/// and [`ContourError::TempoOutOfBounds`] if a tempo is not finite or outside `bounds`.
+/// Returns [`ContourError::InvalidSectionLengths`] if a section has zero bars or the
+/// sections do not cover the document exactly.
 pub fn apply_tempo_contour(
     document: &Document,
     section_bars: &[usize],
@@ -167,6 +180,10 @@ pub struct IncrementalBuild {
 /// section data is then retained from `previous_document` wherever its plan
 /// slot and rebuilt values are unchanged. This makes reuse conservative across
 /// seed, transition, and preceding-section changes.
+///
+/// # Errors
+///
+/// Returns any error from [`compose_plan`] when composing `next_plan`.
 pub fn compose_plan_incremental(
     source: &Document,
     motifs: &[Motif],

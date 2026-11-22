@@ -11,7 +11,7 @@
 //!
 //! | adapter | [`ReadFormat`] | [`WriteFormat`] |
 //! | --- | :-: | :-: |
-//! | [`gp`] | yes | yes |
+//! | `gp` | yes | yes |
 //! | ascii, html, pdf, wav | no | yes |
 //! | midi | yes | yes |
 //!
@@ -53,6 +53,11 @@ pub trait ReadFormat {
     fn detect(bytes: &[u8]) -> bool;
 
     /// Parses bytes into a document.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the bytes are not valid for this format; the variant is the
+    /// adapter's choice.
     fn read(bytes: &[u8]) -> Result<Document>;
 }
 
@@ -65,12 +70,21 @@ pub trait WriteFormat {
     const NAME: &'static str;
 
     /// Serialises a document.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the document cannot be represented in this format; the variant is the
+    /// adapter's choice.
     fn write(doc: &Document) -> Result<Vec<u8>>;
 }
 
 /// Reads bytes using whichever compiled-in format claims them.
 ///
 /// Returns [`crate::Error::UnknownFormat`] when none does.
+///
+/// # Errors
+///
+/// Returns the error of the format that claimed the bytes if it fails to read them.
 pub fn read_any(bytes: &[u8]) -> Result<Document> {
     #[cfg(feature = "gp")]
     if <gp::Gp as ReadFormat>::detect(bytes) {

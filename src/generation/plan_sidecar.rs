@@ -110,6 +110,12 @@ pub fn plan_to_sidecar(
 /// If `current_source_bytes` is provided and the sidecar has a known source hash,
 /// the source hash is verified. Stale plans whose source hash does not match
 /// are rejected with [`PlanSidecarError::SourceHashMismatch`].
+///
+/// # Errors
+///
+/// Returns [`PlanSidecarError::UnsupportedVersion`] if the sidecar is newer than this build
+/// supports, and [`PlanSidecarError::SourceHashMismatch`] if the source hash does not match
+/// `current_source_bytes`.
 pub fn plan_from_sidecar(
     sidecar: &PlanSidecar,
     current_source_bytes: Option<&[u8]>,
@@ -135,6 +141,10 @@ pub fn plan_from_sidecar(
 }
 
 /// Serializes an arrangement plan and history to a JSON sidecar string.
+///
+/// # Errors
+///
+/// Returns [`PlanSidecarError::Serialization`] if the sidecar cannot be encoded as JSON.
 pub fn save_plan(
     plan: &ArrangementPlan,
     source_bytes: &[u8],
@@ -147,6 +157,11 @@ pub fn save_plan(
 }
 
 /// Deserializes a plan sidecar JSON string and validates it against current source bytes.
+///
+/// # Errors
+///
+/// Returns [`PlanSidecarError::Serialization`] if `sidecar_json` is not a valid sidecar. Also
+/// returns any error from [`plan_from_sidecar`] for an unsupported version or a stale source hash.
 pub fn load_plan(
     sidecar_json: &str,
     current_source_bytes: Option<&[u8]>,

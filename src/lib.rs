@@ -5,6 +5,7 @@
 //! capabilities built on that model.
 
 #![warn(missing_docs)]
+#![warn(clippy::missing_errors_doc)]
 
 pub mod edits;
 pub mod error;
@@ -39,11 +40,21 @@ pub type Diagnostic = validation::Issue;
 ///
 /// For a known format prefer the adapter directly — `Gp::read(bytes)` — which
 /// reports that format's own error rather than "unrecognised".
+///
+/// # Errors
+///
+/// Returns [`Error::UnknownFormat`] if no compiled-in format recognises `bytes`, and otherwise any
+/// error from the format that does.
 pub fn load(bytes: &[u8]) -> Result<Document> {
     format::read_any(bytes)
 }
 
 /// Loads bytes and returns non-fatal structural diagnostics alongside the document.
+///
+/// # Errors
+///
+/// Returns any error from [`load`]. Structural problems in a loadable document are returned as
+/// diagnostics, not errors.
 pub fn load_with_diagnostics(bytes: &[u8]) -> Result<(Document, Vec<Diagnostic>)> {
     let document = load(bytes)?;
     let diagnostics = validation::validate(&document);
@@ -55,6 +66,11 @@ pub fn load_with_diagnostics(bytes: &[u8]) -> Result<(Document, Vec<Diagnostic>)
 /// A convenience for the one format that round-trips. Other formats are
 /// renderings and are reached through their adapter:
 /// `<Ascii as WriteFormat>::write(&doc)`.
+///
+/// # Errors
+///
+/// Returns any error from writing the GP container ([`Error::Format`] or [`Error::Io`] if the
+/// archive cannot be written).
 #[cfg(feature = "gp")]
 pub fn save(doc: &Document) -> Result<Vec<u8>> {
     <format::gp::Gp as WriteFormat>::write(doc)

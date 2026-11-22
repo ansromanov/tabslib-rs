@@ -45,6 +45,13 @@ pub const ARTICULATION_DESCRIPTIONS: &[(&str, &str)] = &[
 ];
 
 /// Applies one of the generic articulation transformations to a bar range.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if the range is empty or outside the document or `articulation`
+/// is not one of the names in [`ARTICULATION_DESCRIPTIONS`]. Also returns [`Error::Malformed`] if
+/// a rhythm articulation cannot fill a voice with plain note values; the document is then
+/// unchanged.
 pub fn apply_articulation(
     doc: &mut Document,
     start_bar: usize,
@@ -403,6 +410,10 @@ fn add_octaves(doc: &mut Document, start_bar: usize, end_bar: usize) {
 }
 
 /// Applies a linear dynamic change to an inclusive bar range.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if the range is empty or outside the document.
 pub fn patch_score_section(
     doc: &mut Document,
     start_bar: usize,
@@ -436,6 +447,11 @@ pub fn patch_score_section(
 }
 
 /// Applies a solo archetype to an inclusive bar range in place.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if the range is empty or outside the document. Also returns
+/// any error from [`generate_solo`] for the resulting configuration.
 pub fn apply_solo_archetype(
     doc: &mut Document,
     start_bar: usize,
@@ -451,6 +467,11 @@ pub fn apply_solo_archetype(
 }
 
 /// Applies a deterministic, style-neutral archetype transform.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `archetype` is [`Archetype::Solo`] and `solo` is `None`.
+/// Otherwise returns any error from [`apply_solo_archetype`] or [`apply_articulation`].
 pub fn transform_score(
     doc: &mut Document,
     archetype: Archetype,

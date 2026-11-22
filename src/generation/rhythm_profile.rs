@@ -199,6 +199,15 @@ pub enum RhythmProfileError {
 ///
 /// `steps_per_quarter` controls resolution. Each voice is kept independent in
 /// the encoding so simultaneous parts never collapse into an ambiguous cell.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::InvalidGrid`] if `steps_per_quarter` is zero or a meter
+/// does not fit the grid, [`RhythmProfileError::MissingTrack`] if a track index is outside
+/// the document, and [`RhythmProfileError::EmptyDistribution`] if `tracks` is empty.
+/// Returns [`RhythmProfileError::MissingBar`] if a bar has no data for a selected track.
+/// Returns [`RhythmProfileError::OffGrid`], [`RhythmProfileError::IncompleteBar`] or
+/// [`RhythmProfileError::OverfullBar`] for a voice that misses the grid or the bar length.
 pub fn extract_rhythm_cells(
     document: &Document,
     tracks: &[usize],
@@ -292,6 +301,11 @@ fn extract_one_rhythm_cell(
 }
 
 /// Chooses an exact grid capable of representing every written duration.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::InvalidGrid`] if a meter or duration is degenerate, or the
+/// exact grid does not fit in `u32`.
 pub fn recommended_steps_per_quarter(document: &Document) -> Result<u32, RhythmProfileError> {
     let mut grid = 1u128;
     for master in &document.master_bars {
@@ -323,6 +337,14 @@ pub fn recommended_steps_per_quarter(document: &Document) -> Result<u32, RhythmP
 }
 
 /// Extracts all measurable cells while recording malformed bars instead of aborting.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::InvalidGrid`] if `steps_per_quarter` is zero,
+/// [`RhythmProfileError::MissingTrack`] if a track index is outside the document, and
+/// [`RhythmProfileError::EmptyDistribution`] if `tracks` is empty. Also returns
+/// [`RhythmProfileError::MissingBar`] if a bar has no data for a selected track. Off-grid,
+/// incomplete and overfull voices are recorded as skipped rather than returned.
 pub fn extract_rhythm_cells_tolerant(
     document: &Document,
     tracks: &[usize],
@@ -353,6 +375,10 @@ pub fn extract_rhythm_cells_tolerant(
 }
 
 /// Groups bar cells into fixed-length phrases with stable ordering.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::EmptyWindow`] if `bars_per_phrase` is zero.
 pub fn extract_rhythm_phrases(
     cells: &[RhythmCell],
     bars_per_phrase: usize,
@@ -374,6 +400,13 @@ pub fn extract_rhythm_phrases(
 }
 
 /// Extracts successive pitched-onset interval n-grams on the requested grid.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::EmptyWindow`] if `n` is zero, plus the track and grid
+/// errors of [`extract_rhythm_cells`]: invalid grid, missing track, empty `tracks` or
+/// missing bar. Returns [`RhythmProfileError::OffGrid`] or
+/// [`RhythmProfileError::IncompleteBar`] for a voice that misses the grid or bar length.
 pub fn extract_interval_ngrams(
     document: &Document,
     tracks: &[usize],
@@ -455,6 +488,12 @@ pub fn extract_interval_ngrams(
 }
 
 /// Builds normalized cell, interval, and caller-supplied form distributions.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::EmptyDistribution`] if `documents` is empty, and any error
+/// from [`extract_rhythm_cells`], [`extract_interval_ngrams`] or [`form_prior`] for a
+/// document or for `section_role_sequences`.
 pub fn build_rhythmic_vocabulary(
     documents: &[Document],
     tracks: &[usize],
@@ -486,6 +525,11 @@ pub fn build_rhythmic_vocabulary(
 }
 
 /// Builds a normalized distribution over caller-supplied section-role sequences.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::EmptyRole`] if any sequence contains an empty or blank
+/// section role.
 pub fn form_prior(
     section_role_sequences: &[Vec<String>],
 ) -> Result<BTreeMap<String, f64>, RhythmProfileError> {
@@ -529,6 +573,11 @@ pub fn cosine_similarity(left: &BTreeMap<String, f64>, right: &BTreeMap<String, 
 }
 
 /// Blends two normalized vocabularies using the caller's left-side weight.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::InvalidBlendWeight`] if `left_weight` is not finite or
+/// outside `0..=1`.
 pub fn blend_vocabularies(
     left: &RhythmicVocabulary,
     right: &RhythmicVocabulary,
@@ -658,6 +707,11 @@ fn blend_distribution(
 }
 
 /// Applies caller-selected fields to a riff specification and reports changes.
+///
+/// # Errors
+///
+/// Returns [`RhythmProfileError::InvalidRiffSpec`] if the updated specification fails
+/// validation. `spec` is left unchanged in that case.
 #[cfg(feature = "riffs")]
 pub fn apply_riff_profile(
     spec: &mut super::riff_spec::RiffSpec,

@@ -165,6 +165,12 @@ pub struct MidiGrooveFile {
 /// `bass`, or `guitar`, and from the first numeric component in the filename.
 /// Applications can still use [`MidiGrooveIndex::add_midi`] when metadata is
 /// known explicitly.
+///
+/// # Errors
+///
+/// Returns the first error from [`MidiGrooveIndex::add_midi`] for any file, such as
+/// [`MidiGrooveError::Midi`] for unreadable bytes, [`MidiGrooveError::NoDrumNotes`] or
+/// [`MidiGrooveError::DuplicateId`] when two files share a path.
 pub fn index_midi_directory(files: &[MidiGrooveFile]) -> Result<MidiGrooveIndex, MidiGrooveError> {
     let grid = PatternGrid::new((4, 4), 4)
         .map_err(|error| MidiGrooveError::InvalidGrid(error.to_string()))?;
@@ -199,6 +205,13 @@ impl MidiGrooveIndex {
     }
 
     /// Adds a MIDI groove after parsing and projecting it onto `grid`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MidiGrooveError::EmptyId`], [`MidiGrooveError::EmptyRole`] or
+    /// [`MidiGrooveError::InvalidTempo`] for a blank id, a blank role or a zero tempo, and
+    /// [`MidiGrooveError::DuplicateId`] if `id` is already indexed. Also returns any error from
+    /// [`midi_to_drum_hits`] if the bytes cannot be parsed or projected onto `grid`.
     pub fn add_midi(
         &mut self,
         id: impl Into<String>,
@@ -304,6 +317,14 @@ pub struct MidiGrooveGeneration {
 }
 
 /// Converts MIDI bytes to drum hits on a caller-selected grid.
+///
+/// # Errors
+///
+/// Returns [`MidiGrooveError::InvalidGrid`] if `grid` has no whole bar width and
+/// [`MidiGrooveError::Midi`] if the bytes are not readable MIDI. Returns
+/// [`MidiGrooveError::NoDrumNotes`] if no General MIDI drum note is found, and
+/// [`MidiGrooveError::UnrepresentableOnset`] or [`MidiGrooveError::GridOverflow`] if an onset
+/// cannot be placed exactly on `grid`.
 pub fn midi_to_drum_hits(
     bytes: &[u8],
     grid: PatternGrid,
@@ -312,6 +333,10 @@ pub fn midi_to_drum_hits(
 }
 
 /// Detects the feel of a MIDI groove from its imported event timing.
+///
+/// # Errors
+///
+/// Returns [`MidiGrooveError::Midi`] if the bytes are not readable MIDI.
 pub fn detect_midi_groove_feel(bytes: &[u8]) -> Result<MidiGrooveFeel, MidiGrooveError> {
     let document = midi::read(bytes).map_err(|error| MidiGrooveError::Midi(error.to_string()))?;
     Ok(detect_feel(&document))
@@ -321,6 +346,11 @@ pub fn detect_midi_groove_feel(bytes: &[u8]) -> Result<MidiGrooveFeel, MidiGroov
 ///
 /// Other drum voices keep their original steps and MIDI identities, including
 /// the selected groove's timekeeping cymbal voice.
+///
+/// # Errors
+///
+/// Returns [`MidiGrooveError::InvalidGrid`] if the groove's grid has no whole bar width and
+/// [`MidiGrooveError::GridOverflow`] if a step offset overflows.
 pub fn adapt_midi_groove_to_riff(
     groove: &MidiGroove,
     riff_onsets_by_bar: &[Vec<RiffOnset>],
@@ -361,6 +391,13 @@ pub fn adapt_midi_groove_to_riff(
 }
 
 /// Selects an indexed groove, or uses seeded generation only when `fallback` is supplied.
+///
+/// # Errors
+///
+/// Returns [`MidiGrooveError::NoMatchingGroove`] if no indexed groove matches `role` and the
+/// meter of `grid` and `fallback` is `None`. If a groove matches, returns
+/// [`MidiGrooveError::InvalidGrid`], [`MidiGrooveError::UnrepresentableGridStep`] or
+/// [`MidiGrooveError::GridOverflow`] when it cannot be adapted to `grid`.
 pub fn generate_from_midi_index(
     index: &MidiGrooveIndex,
     role: &str,

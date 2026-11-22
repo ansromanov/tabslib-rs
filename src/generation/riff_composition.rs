@@ -108,6 +108,11 @@ pub enum RiffCompositionError {
 }
 
 /// Computes pairwise bar compatibility between two documents.
+///
+/// # Errors
+///
+/// Returns [`RiffCompositionError::InvalidInput`] if a bar of either document cannot be
+/// fingerprinted, for example when it has a different number of track references than tracks.
 pub fn compatibility_matrix(
     left: &Document,
     right: &Document,
@@ -186,6 +191,13 @@ pub fn order_sources(sources: &[RiffSource], config: RiffCompositionConfig) -> V
 }
 
 /// Concatenates several riff documents, aligning them to one key.
+///
+/// # Errors
+///
+/// Returns [`RiffCompositionError::InvalidInput`] if `sources` is empty, the first source has no
+/// tracks or bars, the sources have different track counts, or a bar reference is missing or
+/// out of range. Returns [`RiffCompositionError::Transposition`] if a keyed source cannot be
+/// transposed to the target key.
 pub fn compose_from_riffs(
     sources: &[RiffSource],
     config: RiffCompositionConfig,
@@ -268,6 +280,11 @@ pub fn compose_from_riffs(
 }
 
 /// Recommends an energy-ordered slot plan for a caller-selected song form.
+///
+/// # Errors
+///
+/// Returns [`RiffCompositionError::InvalidInput`] if `sources` is empty or
+/// `bars_per_section` is zero.
 pub fn recommend_slot_order(
     sources: &[RiffSource],
     form: super::forms::FormTemplate,
@@ -297,6 +314,12 @@ pub fn recommend_slot_order(
 }
 
 /// Composes source documents into labelled slots while allowing different track layouts.
+///
+/// # Errors
+///
+/// Returns [`RiffCompositionError::InvalidInput`] if `sources` is empty, the first source has no
+/// tracks or bars, a source has no fretted track or cannot be adapted to the target key, meter
+/// and tempo, a slot names a source that does not exist, or a bar id overflows.
 pub fn compose_from_slots(
     sources: &[RiffSource],
     plan: &SlotPlan,
@@ -488,6 +511,10 @@ fn tempo_at(document: &Document, bar: usize) -> Option<f64> {
 }
 
 /// Alias for callers that describe the operation as arranging riffs.
+///
+/// # Errors
+///
+/// Returns any error from [`compose_from_riffs`].
 pub fn arrange_from_riffs(
     sources: &[RiffSource],
     config: RiffCompositionConfig,

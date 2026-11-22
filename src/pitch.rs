@@ -181,6 +181,11 @@ fn validate_playability(
 }
 
 /// Transposes every pitched note chromatically, preserving its string where possible.
+///
+/// # Errors
+///
+/// Returns [`PitchError::InvalidSelection`] if the document has no bars, and
+/// [`PitchError::Unplayable`] if a shifted note ends up with a negative fret or a missing string.
 pub fn transpose(doc: &mut Document, semitones: i32) -> Result<(), PitchError> {
     let end = doc
         .master_bars
@@ -190,6 +195,12 @@ pub fn transpose(doc: &mut Document, semitones: i32) -> Result<(), PitchError> {
     transpose_selected(doc, None, 0, end, semitones)
 }
 /// Transposes one track over an inclusive bar range.
+///
+/// # Errors
+///
+/// Returns [`PitchError::InvalidSelection`] if `track` or the bar range is outside the document,
+/// and [`PitchError::Unplayable`] if a shifted note ends up with a negative fret or a missing
+/// string.
 pub fn transpose_track(
     doc: &mut Document,
     track: usize,
@@ -200,6 +211,10 @@ pub fn transpose_track(
     transpose_selected(doc, Some(track), start, end, semitones)
 }
 /// Transposes one track by a key-aware diatonic interval.
+///
+/// # Errors
+///
+/// Returns the same errors as [`transpose_track`] for the resulting chromatic interval.
 pub fn transpose_diatonic(
     doc: &mut Document,
     track: usize,
@@ -212,6 +227,10 @@ pub fn transpose_diatonic(
     transpose_track(doc, track, start, end, interval)
 }
 /// Applies a capo offset to one track while keeping fretting unchanged.
+///
+/// # Errors
+///
+/// Returns [`PitchError::InvalidSelection`] if `track` or the bar range is outside the document.
 pub fn apply_capo(
     doc: &mut Document,
     track: usize,
@@ -230,6 +249,13 @@ pub fn map_pitch_class(pitch_class: i32, from: KeySignature, to: KeySignature) -
     (pitch_class + to.tonic as i32 - from.tonic as i32).rem_euclid(12)
 }
 /// Retunes a track while preserving sounding pitches and string assignments.
+///
+/// # Errors
+///
+/// Returns [`PitchError::UnknownTuningPreset`] if a named target is not a preset,
+/// [`PitchError::InvalidTuning`] if the tuning is empty or has a pitch outside 0..=127,
+/// [`PitchError::InvalidSelection`] if the document has no bars, and [`PitchError::Unplayable`]
+/// if a note cannot be placed on its string in the new tuning.
 pub fn retune_preserve_pitch<'a>(
     doc: &mut Document,
     track: usize,
@@ -265,6 +291,13 @@ pub fn retune_preserve_pitch<'a>(
     })
 }
 /// Retunes a track while preserving the written string and fret fingering.
+///
+/// # Errors
+///
+/// Returns [`PitchError::UnknownTuningPreset`] if a named target is not a preset,
+/// [`PitchError::InvalidTuning`] if the tuning is empty or has a pitch outside 0..=127,
+/// [`PitchError::InvalidSelection`] if the document has no bars, and [`PitchError::Unplayable`]
+/// if a note cannot be placed on its string in the new tuning.
 pub fn retune_preserve_fingering<'a>(
     doc: &mut Document,
     track: usize,

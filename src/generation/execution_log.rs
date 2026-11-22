@@ -1,7 +1,7 @@
 //! What a generator decided, bar by bar.
 //!
 //! The module owns [`ExecutionLog`], [`Decision`] and [`explain`]. A
-//! [`GeneratedTrack`](super::workflows::GeneratedTrack) reports counts, so when
+//! `GeneratedTrack` reports counts, so when
 //! an assessment flags a bar there is nothing to look at: diagnosis means
 //! re-running with different inputs and comparing the output.
 //!
@@ -118,12 +118,21 @@ impl ExecutionLog {
     }
 
     /// Serializes the log as pretty JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LogError::Serialization`] if the log cannot be encoded as JSON.
     pub fn to_json(&self) -> Result<String, LogError> {
         serde_json::to_string_pretty(self)
             .map_err(|error| LogError::Serialization(error.to_string()))
     }
 
     /// Parses a serialized log, rejecting a version this build cannot read.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LogError::Serialization`] if `json` is not a valid log, and
+    /// [`LogError::UnsupportedVersion`] if its version is not the one this build writes.
     pub fn from_json(json: &str) -> Result<Self, LogError> {
         let log: Self = serde_json::from_str(json)
             .map_err(|error| LogError::Serialization(error.to_string()))?;

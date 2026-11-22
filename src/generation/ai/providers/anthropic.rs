@@ -33,6 +33,12 @@ pub struct AnthropicProvider {
 
 impl AnthropicProvider {
     /// Creates a connector for the selected model and API key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyApiKey`] or [`ProviderConfigError::EmptyModel`] if the
+    /// key or model is blank, and [`ProviderConfigError::ClientInitialization`] if the HTTP client
+    /// cannot be built.
     pub fn new(
         api_key: impl Into<String>,
         model: impl Into<String>,
@@ -53,6 +59,10 @@ impl AnthropicProvider {
     }
 
     /// Uses a custom Messages endpoint, such as a compatible gateway.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyEndpoint`] if `endpoint` is blank.
     pub fn with_endpoint(
         mut self,
         endpoint: impl Into<String>,
@@ -70,6 +80,12 @@ impl AnthropicProvider {
     }
 
     /// Uses a different request timeout and retry policy.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::InvalidTimeout`] if the timeout is zero,
+    /// [`ProviderConfigError::TooManyRetries`] if `max_retries` exceeds five, and
+    /// [`ProviderConfigError::ClientInitialization`] if the HTTP client cannot be built.
     pub fn with_options(mut self, options: ProviderOptions) -> Result<Self, ProviderConfigError> {
         self.client = client(options)?;
         self.options = options;

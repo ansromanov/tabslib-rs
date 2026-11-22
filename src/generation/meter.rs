@@ -18,6 +18,12 @@ pub struct BeatGrouping {
 
 impl BeatGrouping {
     /// Creates a grouping after verifying its positive units sum to the meter.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BeatGroupingError::InvalidMeter`] if either part of `meter` is zero, and
+    /// [`BeatGroupingError::InvalidGroups`] if `groups` is empty, contains a zero, or does
+    /// not sum to the meter numerator.
     pub fn new(meter: (u32, u32), groups: Vec<u32>) -> Result<Self, BeatGroupingError> {
         if meter.0 == 0 || meter.1 == 0 {
             return Err(BeatGroupingError::InvalidMeter { meter });
@@ -36,6 +42,12 @@ impl BeatGrouping {
 
     /// Returns the conventional simple, compound, or additive grouping, or derives
     /// a default unit grouping from the numerator when no specific rule applies.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BeatGroupingError::InvalidMeter`] if either part of `meter` is zero, and
+    /// [`BeatGroupingError::Overflow`] if the numerator does not fit the group count. Any
+    /// error from [`BeatGrouping::new`] is also returned.
     pub fn for_meter(meter: (u32, u32)) -> Result<Self, BeatGroupingError> {
         let (numerator, denominator) = meter;
         if numerator == 0 || denominator == 0 {
@@ -68,6 +80,13 @@ impl BeatGrouping {
     }
 
     /// Start positions of each group on a grid of `subdivisions_per_quarter`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BeatGroupingError::InvalidSubdivision`] if `subdivisions_per_quarter` is zero,
+    /// and [`BeatGroupingError::UnrepresentableUnit`] if one denominator unit does not land on
+    /// a whole grid step. Returns [`BeatGroupingError::Overflow`] if the step arithmetic
+    /// overflows, and [`BeatGroupingError::InvalidGroups`] if the groups do not fill the meter.
     pub fn pulse_steps(
         &self,
         subdivisions_per_quarter: u32,
@@ -112,6 +131,12 @@ impl BeatGrouping {
     }
 
     /// Returns group starts in steps of a matching [`PatternGrid`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BeatGroupingError::GridMeterMismatch`] if the grid's meter differs from this
+    /// grouping's meter, and [`BeatGroupingError::InvalidGrid`] if the grid has no valid step
+    /// count. Also returns any error from [`BeatGrouping::pulse_steps`].
     #[cfg(feature = "drums")]
     pub fn pulse_positions(&self, grid: PatternGrid) -> Result<Vec<u32>, BeatGroupingError> {
         self.validate_grid(grid)?;
@@ -119,6 +144,11 @@ impl BeatGrouping {
     }
 
     /// Returns the starts of the second, fourth, and later even-numbered groups.
+    ///
+    /// # Errors
+    ///
+    /// Returns any error from [`BeatGrouping::pulse_steps`], for example if
+    /// `subdivisions_per_quarter` is zero or the unit does not fit the grid.
     pub fn backbeat_steps(
         &self,
         subdivisions_per_quarter: u32,
@@ -132,6 +162,12 @@ impl BeatGrouping {
     }
 
     /// Returns backbeat positions in steps of a matching [`PatternGrid`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BeatGroupingError::GridMeterMismatch`] if the grid's meter differs from this
+    /// grouping's meter, and [`BeatGroupingError::InvalidGrid`] if the grid has no valid step
+    /// count. Also returns any error from [`BeatGrouping::backbeat_steps`].
     #[cfg(feature = "drums")]
     pub fn backbeat_positions(&self, grid: PatternGrid) -> Result<Vec<u32>, BeatGroupingError> {
         self.validate_grid(grid)?;

@@ -147,6 +147,11 @@ struct XmlNote {
 /// let score = MusicXml::read(xml).unwrap();
 /// assert_eq!(score.tracks.len(), 1);
 /// ```
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Format`] (format `musicxml`) if the XML cannot be parsed or unescaped,
+/// and [`crate::Error::Malformed`] if the document contains no parts.
 pub fn read(bytes: &[u8]) -> Result<Document> {
     let mut reader = Reader::from_reader(bytes);
     reader.config_mut().trim_text(true);

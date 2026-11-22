@@ -88,6 +88,12 @@ impl DrumFeelProfile {
 }
 
 /// Profiles an existing percussion track without changing the document.
+///
+/// # Errors
+///
+/// Returns [`DrumFeelError::TrackOutsideDocument`] if `track_index` is out of range and
+/// [`DrumFeelError::NotPercussionTrack`] if the track is not percussion. Returns
+/// [`DrumFeelError::MissingBar`] if a master bar has no bar for the track.
 pub fn profile_existing_drums(
     document: &Document,
     track_index: usize,

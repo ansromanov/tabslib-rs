@@ -141,11 +141,21 @@ fn render_lines(doc: &Document, track: usize, start: usize, end: usize) -> Resul
 }
 
 /// Renders one track and an inclusive master-bar range as ASCII tablature.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `track` is not a track of `doc`, or if `start > end` or
+/// `end` is past the last master bar.
 pub fn render_track(doc: &Document, track: usize, start: usize, end: usize) -> Result<String> {
     render_lines(doc, track, start, end).map(|lines| lines.join("\n"))
 }
 
 /// Renders two inclusive bar windows side by side for visual comparison.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `track` is not a track of `doc`, or if either window has
+/// `start > end` or an `end` past the last master bar.
 pub fn render_compare(
     doc: &Document,
     track: usize,

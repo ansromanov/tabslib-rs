@@ -20,6 +20,11 @@ pub struct PatternGrid {
 
 impl PatternGrid {
     /// Creates a grid and verifies that its meter has an integral step count.
+    ///
+    /// # Errors
+    ///
+    /// Returns any error from [`PatternGrid::steps_per_bar`] if the meter or resolution does
+    /// not give a whole number of steps per bar.
     pub fn new(meter: (u32, u32), subdivisions_per_quarter: u32) -> Result<Self, PatternError> {
         let grid = Self {
             meter,
@@ -30,6 +35,13 @@ impl PatternGrid {
     }
 
     /// Number of steps in one bar.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::InvalidMeter`] if either part of the meter is zero,
+    /// [`PatternError::InvalidSubdivision`] if `subdivisions_per_quarter` is zero,
+    /// [`PatternError::NonIntegralGrid`] if the bar is not a whole number of steps, and
+    /// [`PatternError::GridOverflow`] if the step arithmetic overflows.
     pub fn steps_per_bar(self) -> Result<usize, PatternError> {
         let (numerator, denominator) = self.meter;
         if numerator == 0 || denominator == 0 {
@@ -66,6 +78,12 @@ pub struct CatalogPattern<T> {
 
 impl<T: Clone + Default + PartialEq> CatalogPattern<T> {
     /// Validates a dense pattern. Bars must include every grid step.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::EmptyPatternId`] if `id` is blank, [`PatternError::EmptyPattern`]
+    /// if `bars` is empty, and [`PatternError::InvalidBarWidth`] if a bar does not have one
+    /// value per grid step. Also returns any error from [`PatternGrid::steps_per_bar`].
     pub fn new(
         id: impl Into<String>,
         grid: PatternGrid,
@@ -95,6 +113,14 @@ impl<T: Clone + Default + PartialEq> CatalogPattern<T> {
     /// Adapts to a target meter/resolution without dropping active steps.
     /// Events must land exactly on the target grid; empty cells may be padded
     /// or removed. Articulation data travels with each active step unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::UnrepresentableEvent`] if an active step does not land on the
+    /// target grid, [`PatternError::EventOutsideTarget`] if it falls past the end of the target
+    /// bar, and [`PatternError::EventCollision`] if two steps map to one target step. Also
+    /// returns [`PatternError::InvalidBarWidth`] if a bar does not match its grid, and any error
+    /// from [`PatternGrid::steps_per_bar`].
     pub fn adapt(&self, target: PatternGrid) -> Result<Self, PatternError> {
         let source_width = self.grid.steps_per_bar()?;
         let target_width = target.steps_per_bar()?;
@@ -177,6 +203,11 @@ pub struct PatternConstraints {
 
 impl PatternConstraints {
     /// Creates constraints for a positive bar count, initially allowing any density.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::EmptyRequest`] if `bars` is zero, and any error from
+    /// [`PatternGrid::steps_per_bar`] if the grid is invalid.
     pub fn new(grid: PatternGrid, bars: usize) -> Result<Self, PatternError> {
         if bars == 0 {
             return Err(PatternError::EmptyRequest);
@@ -191,6 +222,12 @@ impl PatternConstraints {
     }
 
     /// Builds a one-bar request from a document position.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::DocumentRangeOutsideScore`] if `bar_index` is outside the score,
+    /// and any error from [`PatternGrid::new`] for the bar's meter and
+    /// `subdivisions_per_quarter`.
     pub fn for_bar(
         document: &Document,
         bar_index: usize,
@@ -207,6 +244,13 @@ impl PatternConstraints {
     }
 
     /// Builds a phrase request after verifying the range exists and has one meter.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::EmptyRequest`] if `bars` is zero,
+    /// [`PatternError::DocumentRangeOutsideScore`] if the range does not exist, and
+    /// [`PatternError::MixedMeterPhrase`] if its bars do not share one meter. Also returns any
+    /// error from [`PatternGrid::new`] for that meter and `subdivisions_per_quarter`.
     pub fn for_phrase(
         document: &Document,
         start_bar: usize,
@@ -234,6 +278,10 @@ impl PatternConstraints {
     }
 
     /// Restricts compatible patterns by active event count.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::InvalidActiveStepRange`] if `min > max`.
     pub fn with_active_steps(mut self, min: usize, max: usize) -> Result<Self, PatternError> {
         if min > max {
             return Err(PatternError::InvalidActiveStepRange { min, max });
@@ -262,6 +310,10 @@ pub struct PatternCatalog<T> {
 impl<T: Clone + Default + PartialEq> PatternCatalog<T> {
     /// Creates a catalog and rejects duplicate identifiers. Empty catalogs
     /// are valid values so selection can report `EmptyCatalog` explicitly.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::DuplicatePatternId`] if two patterns share an identifier.
     pub fn new(patterns: Vec<CatalogPattern<T>>) -> Result<Self, PatternError> {
         let mut ids = BTreeSet::new();
         for pattern in &patterns {
@@ -280,6 +332,13 @@ impl<T: Clone + Default + PartialEq> PatternCatalog<T> {
     }
 
     /// Filters, adapts, then selects with a stable seeded index.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatternError::EmptyCatalog`] if the catalog has no patterns, and
+    /// [`PatternError::NoCompatiblePattern`] if every pattern is rejected for its bar count,
+    /// adaptation failure or active-step range. Returns [`PatternError::GridOverflow`] if
+    /// the seeded index cannot be computed.
     pub fn select_seeded(
         &self,
         constraints: &PatternConstraints,

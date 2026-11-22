@@ -137,6 +137,10 @@ impl fmt::Display for TuningPresetError {
 impl std::error::Error for TuningPresetError {}
 
 /// Resolves a preset name without regard to letter case or surrounding spaces.
+///
+/// # Errors
+///
+/// Returns [`TuningPresetError`] if `name` matches no preset, listing the available names.
 pub fn resolve_tuning_preset(name: &str) -> Result<&'static TuningPreset, TuningPresetError> {
     TUNING_PRESETS
         .iter()

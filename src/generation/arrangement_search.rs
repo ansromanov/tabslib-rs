@@ -199,6 +199,12 @@ pub enum ArrangementSearchError {
 /// The meter contributes an exact quarter-note fraction; the finite `f64`
 /// tempo is treated as its exact IEEE-754 rational value. Unsupported extreme
 /// tempos return [`ArrangementSearchError::ArithmeticOverflow`].
+///
+/// # Errors
+///
+/// Returns [`ArrangementSearchError::InvalidInput`] if the meter has a zero part or `bpm` is
+/// not positive and finite, and [`ArrangementSearchError::ArithmeticOverflow`] if the
+/// exact arithmetic exceeds its range.
 pub fn bar_duration(meter: (u32, u32), bpm: f64) -> Result<ExactDuration, ArrangementSearchError> {
     if meter.0 == 0 || meter.1 == 0 || !bpm.is_finite() || bpm <= 0.0 {
         return Err(ArrangementSearchError::InvalidInput(
@@ -218,6 +224,11 @@ pub fn bar_duration(meter: (u32, u32), bpm: f64) -> Result<ExactDuration, Arrang
 
 /// Returns the duration of a bar at its score position using the effective
 /// tempo map entry, or the requirements module's documented default tempo.
+///
+/// # Errors
+///
+/// Returns [`ArrangementSearchError::InvalidInput`] if `bar_index` is outside the score, and
+/// any error from [`bar_duration`] for the bar's meter and tempo.
 pub fn document_bar_duration(
     document: &Document,
     bar_index: usize,
@@ -230,6 +241,12 @@ pub fn document_bar_duration(
 }
 
 /// Counts how many whole bars from repeated playback fit a time budget.
+///
+/// # Errors
+///
+/// Returns [`ArrangementSearchError::InvalidInput`] if the document has no playable master
+/// bar, and [`ArrangementSearchError::ArithmeticOverflow`] if the exact duration
+/// arithmetic exceeds its range. Also returns any error from [`document_bar_duration`].
 pub fn bars_for_minutes(
     document: &Document,
     minutes: u64,
@@ -268,6 +285,12 @@ pub fn bars_for_minutes(
 ///
 /// The returned achieved duration makes unreachable targets explicit instead
 /// of rounding or silently changing the score's bar lengths.
+///
+/// # Errors
+///
+/// Returns [`ArrangementSearchError::InvalidInput`] if the document has no playable master
+/// bar, and [`ArrangementSearchError::ArithmeticOverflow`] if the exact duration
+/// arithmetic exceeds its range. Also returns any error from [`document_bar_duration`].
 pub fn resolve_repeats(
     document: &Document,
     minutes: u64,
@@ -306,6 +329,15 @@ pub fn resolve_repeats(
 ///
 /// Each sampled plan chooses one of the caller-listed motifs per section. A
 /// repeated call with the same inputs and seed returns the same ordered deck.
+///
+/// # Errors
+///
+/// Returns [`ArrangementSearchError::InvalidInput`] if the request's candidate count is
+/// outside `1..=128`, its ranking weights are not finite or a penalty is negative, the
+/// template is not a version-1 plan with sections, or a section lists no candidates.
+/// Returns [`ArrangementSearchError::InsufficientCandidates`] if fewer distinct
+/// arrangements than requested could be composed, and
+/// [`ArrangementSearchError::ArithmeticOverflow`] if duration arithmetic overflows.
 pub fn search_arrangements(
     source: &Document,
     motifs: &[Motif],

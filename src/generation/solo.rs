@@ -110,6 +110,13 @@ struct BarPlan {
 /// let result = generate_solo(&mut score, &request).unwrap();
 /// assert!(result.note_count > 0);
 /// ```
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if the bar range is empty or outside the document, the key or
+/// scale is invalid, or the register, tuning or other constraints are invalid. Also returns
+/// [`Error::Malformed`] if the rhythm pattern does not fill a selected bar's meter exactly or
+/// the scale has no playable pitch in the register.
 pub fn generate_solo(doc: &mut Document, config: &SoloConfig) -> Result<GeneratedSolo> {
     validate_config(doc, config)?;
     let plans = (config.start_bar..=config.end_bar)

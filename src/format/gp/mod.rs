@@ -27,6 +27,12 @@ pub struct Gp;
 
 impl Gp {
     /// Reads a GP7/8 container using caller-supplied safety limits.
+    ///
+    /// # Errors
+    ///
+    /// Returns any error from reading the container under `container_limits`, such as
+    /// [`crate::Error::LimitExceeded`] or [`crate::Error::Malformed`] when it has no score
+    /// payload, or from parsing the payload under `xml_limits`.
     pub fn read_with_limits(
         bytes: &[u8],
         container_limits: ContainerLimits,
@@ -89,11 +95,23 @@ impl WriteFormat for Gp {
 }
 
 /// Parses an XML payload directly, without the surrounding container.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if the XML is not a GPIF score with a valid time
+/// signature, [`crate::Error::LimitExceeded`] if it exceeds the default XML limits, and
+/// [`crate::Error::Format`] if the XML is not well formed.
 pub fn parse_payload(xml: &str) -> Result<Document> {
     parse::parse(xml)
 }
 
 /// Parses a GPIF payload using caller-supplied XML limits.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if the XML is not a GPIF score with a valid time
+/// signature, [`crate::Error::LimitExceeded`] if it exceeds `limits`, and
+/// [`crate::Error::Format`] if the XML is not well formed.
 pub fn parse_payload_with_limits(xml: &str, limits: XmlLimits) -> Result<Document> {
     parse::parse_with_limits(xml, limits)
 }

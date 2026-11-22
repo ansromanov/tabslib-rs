@@ -17,12 +17,23 @@ pub use crate::selection;
 pub use crate::{Document, Error, Result};
 
 /// Exports a document as a deterministic MIDI buffer.
+///
+/// # Errors
+///
+/// Returns `Ok` for every document: MIDI encoding has no error condition today.
 #[cfg(feature = "midi")]
 pub fn export_midi(document: &Document) -> Result<Vec<u8>> {
     Ok(crate::format::midi::write(document))
 }
 
 /// Renders a document as a stereo 16-bit WAV buffer using a SoundFont.
+///
+/// # Errors
+///
+/// Returns any error from `crate::format::wav::render_pcm`: [`crate::Error::Io`] if the SoundFont
+/// cannot be opened, and [`crate::Error::Malformed`] if it is not valid SoundFont2 data or the
+/// score cannot be rendered (an invalid tempo, more than 15 pitched tracks, or output too long for
+/// a WAV file).
 #[cfg(feature = "wav")]
 pub fn render_wav(document: &Document, soundfont: impl AsRef<std::path::Path>) -> Result<Vec<u8>> {
     crate::format::wav::render_pcm(document, soundfont)
@@ -364,6 +375,11 @@ pub mod generation {
     }
 
     /// Adds a seeded drum track using the stable document-level request type.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if `request.source_tracks` is empty or names a track
+    /// outside the document, or if a bar's meter cannot be laid on a sixteenth-note grid.
     #[cfg(all(feature = "drums", feature = "rhythm"))]
     pub fn generate_drums(
         document: &mut Document,
@@ -379,6 +395,12 @@ pub mod generation {
     }
 
     /// Adds a seeded drum track using caller-selected beat groupings by meter.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if `request.source_tracks` is empty or names a track
+    /// outside the document, if a bar's meter cannot be laid on a sixteenth-note grid, or if no
+    /// beat grouping can be derived for a meter that `groupings` does not override.
     #[cfg(all(feature = "drums", feature = "rhythm"))]
     pub fn generate_drums_with_groupings(
         document: &mut Document,
@@ -396,6 +418,12 @@ pub mod generation {
     }
 
     /// Adds a seeded drum track with caller-selected section feels.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if `request.source_tracks` is empty or names a track
+    /// outside the document, if a section range is reversed or ends past the last bar, or if a
+    /// bar's meter cannot be laid on a sixteenth-note grid.
     #[cfg(all(feature = "drums", feature = "rhythm"))]
     pub fn generate_drums_with_sections(
         document: &mut Document,
@@ -413,6 +441,13 @@ pub mod generation {
     }
 
     /// Adds a strategy-driven bass track using the stable document-level request type.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if `request.source_tracks` is empty or names a track
+    /// outside the document, if the derived tuning is unsupported or a custom tuning is not 4 or 5
+    /// ascending MIDI pitches, if a bar's meter cannot be laid on a sixteenth-note grid, or if the
+    /// bass notes do not fit within `max_fret`.
     #[cfg(all(feature = "drums", feature = "rhythm"))]
     pub fn generate_bass(
         document: &mut Document,
@@ -431,6 +466,14 @@ pub mod generation {
     }
 
     /// Adds a strategy-driven bass track using caller-selected beat groupings.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if `request.source_tracks` is empty or names a track
+    /// outside the document, if the derived tuning is unsupported or a custom tuning is not 4 or 5
+    /// ascending MIDI pitches, if a bar's meter cannot be laid on a sixteenth-note grid, if no beat
+    /// grouping can be derived for a meter that `groupings` does not override, or if the bass
+    /// notes do not fit within `max_fret`.
     #[cfg(all(feature = "drums", feature = "rhythm"))]
     pub fn generate_bass_with_groupings(
         document: &mut Document,
@@ -451,6 +494,12 @@ pub mod generation {
     }
 
     /// Adds a seeded harmony track derived from one pitched source track.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if `request.source_track` is outside the document, the
+    /// score is empty, the tuning or playability limits are invalid, the interval is beyond two
+    /// octaves, a diatonic harmony has no key to use, or the source track has no pitched notes.
     #[cfg(feature = "harmony")]
     pub fn generate_harmony(
         document: &mut Document,
@@ -460,6 +509,11 @@ pub mod generation {
     }
 
     /// Builds an arrangement from motifs and sections without repairing timing.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same errors as [`arrangement::compose_song`], an
+    /// [`ArrangementError`] for an invalid motif, section or join.
     #[cfg(feature = "arrangement")]
     pub fn arrange(
         source: &Document,
@@ -757,12 +811,24 @@ pub mod generation {
     /// Unlike every other generator here, this one needs no source material:
     /// it originates a riff rather than accompanying one. An unrealizable
     /// specification returns [`RiffSpecError`] rather than a different riff.
+    ///
+    /// # Errors
+    ///
+    /// Returns the [`RiffSpecError`] that [`validate_riff`] reports if `spec` cannot be realized.
     #[cfg(feature = "riffs")]
     pub fn write_riff(spec: &RiffSpec) -> std::result::Result<Document, RiffSpecError> {
         riff_spec::write_riff(spec)
     }
 
     /// Checks a riff specification without writing it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RiffSpecError::NoBars`] if `spec.bars` is zero, [`RiffSpecError::NoDegrees`] if
+    /// there are no degrees, and [`RiffSpecError::DegreeOutOfRange`] if a degree is not in 1..=7.
+    /// Returns [`RiffSpecError::TuningTooShort`] if the tuning has fewer strings than the voicing
+    /// needs, [`RiffSpecError::InvalidTempo`] if the tempo is not a positive finite number, and
+    /// [`RiffSpecError::UnreachableDegree`] if a degree cannot be fretted within range.
     #[cfg(feature = "riffs")]
     pub fn validate_riff(spec: &RiffSpec) -> std::result::Result<(), RiffSpecError> {
         riff_spec::validate(spec)
@@ -772,6 +838,13 @@ pub mod generation {
     ///
     /// The plan is returned rather than mutated, so a refused edit cannot
     /// leave a half-applied one behind.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PlanEditError::NoSuchSlot`] or [`PlanEditError::AmbiguousSlot`] if the address
+    /// matches no slot or several. Returns [`PlanEditError::ZeroRepeat`],
+    /// [`PlanEditError::LastSlot`], [`PlanEditError::InvalidSection`] or
+    /// [`PlanEditError::EnergyOutOfRange`] if the edit itself is not valid.
     #[cfg(feature = "arrangement")]
     pub fn edit_plan(
         plan: &crate::generation::arrangement::ArrangementPlan,
@@ -807,6 +880,12 @@ pub mod generation {
     }
 
     /// Adds selected accompaniment layers to a document in one deterministic operation.
+    ///
+    /// # Errors
+    ///
+    /// Returns any error from generating a requested layer (drums, bass, harmony, lead or second
+    /// guitar), such as [`crate::Error::Malformed`] for invalid source tracks or settings. On
+    /// error the document is left unchanged.
     pub fn generate_accompaniment(
         document: &mut Document,
         request: &AccompanimentRequest<'_>,
