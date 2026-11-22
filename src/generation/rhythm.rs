@@ -63,9 +63,13 @@ pub struct BassFretPosition {
 /// A source riff root represented by its lowest sounding pitch.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RiffRoot {
+    /// Zero-based subdivision step within the bar.
     pub step: u32,
+    /// Lowest sounding MIDI pitch of the onset.
     pub midi: i32,
+    /// Pitch class of `midi`, 0-11 with 0 as C.
     pub pitch_class: u8,
+    /// Whether the onset is accented.
     pub accent: bool,
 }
 
@@ -88,20 +92,30 @@ pub fn extract_riff_roots(onsets: &[RiffOnset]) -> Vec<RiffRoot> {
 /// External register and articulation policy for generated bass material.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BassProfile {
+    /// Lowest allowed MIDI note.
     pub min_midi: u8,
+    /// Highest allowed MIDI note.
     pub max_midi: u8,
+    /// Preferred maximum leap between consecutive notes, in semitones.
     pub max_leap: u8,
+    /// MIDI velocity for accented hits.
     pub accent_velocity: u8,
+    /// MIDI velocity for unaccented hits.
     pub normal_velocity: u8,
 }
 
 /// A generated bass event.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BassHit {
+    /// Zero-based subdivision step.
     pub step: u32,
+    /// MIDI note number.
     pub midi: u8,
+    /// MIDI velocity.
     pub velocity: u8,
+    /// Whether the hit is accented.
     pub accent: bool,
+    /// Whether the hit came from a bass fill.
     pub fill: bool,
     /// Duration in sixteenth-note steps, used to preserve sustained notes.
     pub duration_steps: u32,
@@ -110,8 +124,11 @@ pub struct BassHit {
 /// Relative bass event supplied by an external fill profile.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BassFillStep {
+    /// Step relative to the fill insertion step.
     pub step: u32,
+    /// MIDI note number.
     pub midi: u8,
+    /// MIDI velocity.
     pub velocity: u8,
 }
 
@@ -501,11 +518,17 @@ pub fn voice_leading_leaps(hits: &[BassHit]) -> Vec<u8> {
 /// Riff-lock and density metrics for a generated rhythm section.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RhythmCompatibility {
+    /// Number of distinct riff onset steps.
     pub riff_onsets: usize,
+    /// Number of distinct non-fill bass onset steps.
     pub bass_onsets: usize,
+    /// Number of steps where bass and riff both have an onset.
     pub locked_onsets: usize,
+    /// Share of riff onset steps that the bass also hits (0.0-1.0; 1.0 when the riff has none).
     pub riff_coverage: f64,
+    /// Share of bass onset steps that coincide with a riff onset (0.0-1.0; 1.0 when the bass has none).
     pub bass_lock_ratio: f64,
+    /// Mean of `riff_coverage` and `bass_lock_ratio` (0.0-1.0).
     pub score: f64,
 }
 

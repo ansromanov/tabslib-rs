@@ -52,10 +52,18 @@ pub struct SoloTokenCandidate {
 pub enum TokenSoloError {
     /// A token was malformed or outside the grammar.
     #[error("invalid solo token {token:?} at position {index}")]
-    InvalidToken { index: usize, token: String },
+    InvalidToken {
+        /// Zero-based position of the token in the input.
+        index: usize,
+        /// The offending token text.
+        token: String,
+    },
     /// A technique token appeared before any pitch event.
     #[error("technique token {token:?} has no preceding pitch")]
-    TechniqueWithoutPitch { token: String },
+    TechniqueWithoutPitch {
+        /// The technique token text.
+        token: String,
+    },
     /// Hammer-on was not followed by a pitch event.
     #[error("hammer-on must be followed by another pitched event")]
     IncompleteHammerOn,
@@ -64,16 +72,27 @@ pub enum TokenSoloError {
     InvalidRequest,
     /// Tokens do not fill every selected bar exactly.
     #[error("token durations do not fill selected bar {bar} exactly")]
-    BarDurationMismatch { bar: usize },
+    BarDurationMismatch {
+        /// Zero-based index of the bar that is not filled.
+        bar: usize,
+    },
     /// Exact duration accumulation exceeded the supported rational range.
     #[error("token duration exceeds the exact timing range")]
     DurationOverflow,
     /// No fingering path satisfies the window and movement constraints.
     #[error("no fingering solution for event {event} at pitch {pitch}")]
-    NoFingeringSolution { event: usize, pitch: i32 },
+    NoFingeringSolution {
+        /// Zero-based index of the pitch event.
+        event: usize,
+        /// MIDI pitch of the event.
+        pitch: i32,
+    },
     /// Solver output failed a guaranteed hard requirement.
     #[error("solver output violates {requirement}")]
-    SolverInvariant { requirement: &'static str },
+    SolverInvariant {
+        /// Name of the violated requirement.
+        requirement: &'static str,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

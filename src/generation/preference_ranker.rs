@@ -125,7 +125,12 @@ impl PreferenceAgreement {
 pub enum PreferenceRankerError {
     /// There were fewer decisive records than the caller requires.
     #[error("need at least {minimum} decisive records, received {actual}")]
-    TooFewDecisive { minimum: usize, actual: usize },
+    TooFewDecisive {
+        /// Minimum number of decisive records required.
+        minimum: usize,
+        /// Number of decisive records received.
+        actual: usize,
+    },
     /// Decisive examples do not carry the same metric keys on both sides.
     #[error("each pair must carry matching, nonempty assessment metric sets")]
     InconsistentMetrics,

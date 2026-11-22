@@ -50,10 +50,20 @@ pub enum HybridError {
     NoPitchedNotes(usize),
     /// A score reference points to a missing bar.
     #[error("bar data is missing at bar {bar}, track {track}")]
-    MissingBar { bar: usize, track: usize },
+    MissingBar {
+        /// Zero-based bar index.
+        bar: usize,
+        /// Zero-based track index.
+        track: usize,
+    },
     /// B's contour cannot be placed in A's instrument range.
     #[error("contour pitch {pitch} cannot be played on track {track}")]
-    UnplayablePitch { track: usize, pitch: i32 },
+    UnplayablePitch {
+        /// Zero-based track index.
+        track: usize,
+        /// MIDI pitch that cannot be played.
+        pitch: i32,
+    },
 }
 
 /// Combines selected riffs. The inputs remain unchanged, and the same request
@@ -159,9 +169,19 @@ pub enum CandidateRejection {
     /// The assessment report did not contain the requested metric.
     MissingMetric(Metric),
     /// A measured ratio is below a caller's inclusive minimum.
-    BelowMinimum { metric: Metric, actual: Measurement },
+    BelowMinimum {
+        /// The metric that was checked.
+        metric: Metric,
+        /// The measured value.
+        actual: Measurement,
+    },
     /// A measured ratio is above a caller's inclusive maximum.
-    AboveMaximum { metric: Metric, actual: Measurement },
+    AboveMaximum {
+        /// The metric that was checked.
+        metric: Metric,
+        /// The measured value.
+        actual: Measurement,
+    },
 }
 
 /// Assessment and caller-policy results for one input candidate.

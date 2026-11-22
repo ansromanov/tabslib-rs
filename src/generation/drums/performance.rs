@@ -11,25 +11,35 @@ use super::{voices, DrumHit, DrumOrnament, DrumPattern};
 /// External, style-neutral controls for turning riff onsets into drum hits.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DrumProfile {
+    /// General MIDI note number used for kick hits.
     pub kick_voice: u8,
+    /// General MIDI note number used for snare hits.
     pub snare_voice: u8,
+    /// General MIDI note number used for cymbal hits.
     pub cymbal_voice: u8,
+    /// Percentage chance (0-100) that an onset also gets a kick; 100 or more always applies.
     pub kick_probability: u8,
+    /// Percentage chance (0-100) that an onset gets a snare; accented onsets always get one.
     pub snare_probability: u8,
+    /// Percentage chance (0-100) that an onset also gets a cymbal; 100 or more always applies.
     pub cymbal_probability: u8,
 }
 
 /// A fill supplied by a profile or caller, relative to its insertion step.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FillPattern {
+    /// Length of the fill in steps; hits at or beyond it are dropped, and zero disables the fill.
     pub length: u32,
+    /// Fill hits with steps relative to the insertion step.
     pub hits: Vec<DrumHit>,
 }
 
 /// Bounds for deterministic performance variation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HumanizationConfig {
+    /// Maximum random velocity change applied in either direction (MIDI velocity units).
     pub velocity_range: u8,
+    /// Maximum random timing change applied in either direction, in `DrumHit::timing_offset` units.
     pub timing_range: i16,
 }
 

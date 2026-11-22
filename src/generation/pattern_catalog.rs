@@ -380,14 +380,19 @@ fn seeded_index(seed: u64, len: usize) -> Result<usize, PatternError> {
 pub enum PatternError {
     /// Meter components must be positive.
     #[error("invalid meter {meter:?}")]
-    InvalidMeter { meter: (u32, u32) },
+    InvalidMeter {
+        /// Time signature as `(numerator, denominator)`.
+        meter: (u32, u32),
+    },
     /// Grid resolution must be positive.
     #[error("subdivisions per quarter must be positive")]
     InvalidSubdivision,
     /// Meter and resolution do not produce an integral bar width.
     #[error("meter {meter:?} has no integral grid at {subdivisions_per_quarter} subdivisions per quarter")]
     NonIntegralGrid {
+        /// Time signature as `(numerator, denominator)`.
         meter: (u32, u32),
+        /// Grid subdivisions per quarter note.
         subdivisions_per_quarter: u32,
     },
     /// Arithmetic or platform-size conversion overflowed.
@@ -398,13 +403,20 @@ pub enum PatternError {
     EmptyPatternId,
     /// A pattern must contain at least one bar.
     #[error("pattern {id:?} has no bars")]
-    EmptyPattern { id: String },
+    EmptyPattern {
+        /// Identifier of the empty pattern.
+        id: String,
+    },
     /// A bar must be represented by a dense grid of the expected width.
     #[error("pattern {id:?} bar {bar} has {actual} steps; expected {expected}")]
     InvalidBarWidth {
+        /// Pattern identifier.
         id: String,
+        /// Zero-based bar index within the pattern.
         bar: usize,
+        /// Expected number of steps in the bar.
         expected: usize,
+        /// Actual number of steps in the bar.
         actual: usize,
     },
     /// Two pattern values would land on the same target step.
@@ -412,22 +424,37 @@ pub enum PatternError {
         "pattern {id:?} bar {bar} steps collide at target step {target_step} (source step {step})"
     )]
     EventCollision {
+        /// Pattern identifier.
         id: String,
+        /// Zero-based bar index within the pattern.
         bar: usize,
+        /// Source step within the bar.
         step: usize,
+        /// Target step within the bar where the values collide.
         target_step: usize,
     },
     /// Active source step falls off the end of the target bar.
     #[error("pattern {id:?} bar {bar} event at source step {step} falls outside target width {target_width}")]
     EventOutsideTarget {
+        /// Pattern identifier.
         id: String,
+        /// Zero-based bar index within the pattern.
         bar: usize,
+        /// Source step within the bar.
         step: usize,
+        /// Number of steps in the target bar.
         target_width: usize,
     },
     /// An active source step cannot be represented at the requested resolution.
     #[error("pattern {id:?} bar {bar} event at source step {step} is not representable on the target grid")]
-    UnrepresentableEvent { id: String, bar: usize, step: usize },
+    UnrepresentableEvent {
+        /// Pattern identifier.
+        id: String,
+        /// Zero-based bar index within the pattern.
+        bar: usize,
+        /// Source step within the bar.
+        step: usize,
+    },
     /// Requested span is empty.
     #[error("selection must request at least one bar")]
     EmptyRequest,
@@ -439,14 +466,25 @@ pub enum PatternError {
     MixedMeterPhrase,
     /// Active-step density range is inverted.
     #[error("invalid active-step range {min}..={max}")]
-    InvalidActiveStepRange { min: usize, max: usize },
+    InvalidActiveStepRange {
+        /// Requested minimum number of active steps.
+        min: usize,
+        /// Requested maximum number of active steps.
+        max: usize,
+    },
     /// Catalog identifiers must be unique.
     #[error("duplicate pattern identifier {id:?}")]
-    DuplicatePatternId { id: String },
+    DuplicatePatternId {
+        /// The repeated identifier.
+        id: String,
+    },
     /// No patterns were supplied.
     #[error("pattern catalog is empty")]
     EmptyCatalog,
     /// No entry survived filtering/adaptation; includes one reason per rejected entry.
     #[error("no compatible pattern ({rejections:?})")]
-    NoCompatiblePattern { rejections: Vec<PatternRejection> },
+    NoCompatiblePattern {
+        /// One rejection per candidate entry.
+        rejections: Vec<PatternRejection>,
+    },
 }

@@ -22,7 +22,12 @@ pub struct TempoBounds {
 pub enum ContourError {
     /// The curve has a different number of values than the plan has sections.
     #[error("contour has {curve} values for {sections} sections")]
-    Length { curve: usize, sections: usize },
+    Length {
+        /// Number of values in the supplied curve.
+        curve: usize,
+        /// Number of sections in the plan.
+        sections: usize,
+    },
     /// An energy value is outside the supported 0..=100 range.
     #[error("energy {0} is outside 0..=100")]
     EnergyOutOfRange(u8),
@@ -34,7 +39,10 @@ pub enum ContourError {
     TempoOutOfBounds(f64),
     /// Section lengths must be nonzero and cover the document exactly.
     #[error("section lengths must be nonzero and cover all {bars} document bars")]
-    InvalidSectionLengths { bars: usize },
+    InvalidSectionLengths {
+        /// Number of bars in the document.
+        bars: usize,
+    },
 }
 
 /// Assigns section energy values from a caller-supplied contour.

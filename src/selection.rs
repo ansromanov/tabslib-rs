@@ -20,13 +20,23 @@ pub struct Selection {
 }
 
 /// Error returned when a selection edit cannot be applied safely.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum SelectionError {
     /// A selection index or range is invalid.
+    #[error("invalid selection: {0}")]
     InvalidSelection(String),
     /// Re-fingering would require an unavailable or negative fret.
-    Unplayable { track: usize, bar: usize, note: u32 },
+    #[error("note {note} in track {track}, bar {bar} cannot be re-fingered onto that string")]
+    Unplayable {
+        /// Zero-based track index.
+        track: usize,
+        /// Zero-based master-bar index.
+        bar: usize,
+        /// Id of the note that cannot be placed.
+        note: u32,
+    },
     /// An edit produced an over-full voice.
+    #[error("edit would leave {} over-full voice(s)", .0.len())]
     Overfull(Vec<crate::inspect::BarIntegrity>),
 }
 

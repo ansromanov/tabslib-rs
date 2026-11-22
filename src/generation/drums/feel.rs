@@ -271,13 +271,22 @@ fn selected_cymbal_voice(
 pub enum DrumFeelError {
     /// Track index is outside the document.
     #[error("track {track_index} is outside the document")]
-    TrackOutsideDocument { track_index: usize },
+    TrackOutsideDocument {
+        /// Zero-based index of the offending track.
+        track_index: usize,
+    },
     /// The selected track is not classified as percussion.
     #[error("track {track_index} is not a percussion track")]
-    NotPercussionTrack { track_index: usize },
+    NotPercussionTrack {
+        /// Zero-based index of the offending track.
+        track_index: usize,
+    },
     /// The selected track has no bar referenced at the given score position.
     #[error("percussion track is missing the bar at score position {bar_index}")]
-    MissingBar { bar_index: usize },
+    MissingBar {
+        /// Zero-based score position of the missing bar.
+        bar_index: usize,
+    },
 }
 
 #[cfg(test)]

@@ -133,22 +133,38 @@ pub enum RhythmProfileError {
     InvalidGrid,
     /// A selected track index does not exist in a document.
     #[error("track index {track} is outside document with {tracks} tracks")]
-    MissingTrack { track: usize, tracks: usize },
+    MissingTrack {
+        /// Requested zero-based track index.
+        track: usize,
+        /// Number of tracks in the document.
+        tracks: usize,
+    },
     /// A document bar has no corresponding track bar.
     #[error("bar {bar} has no data for track {track}")]
-    MissingBar { bar: usize, track: usize },
+    MissingBar {
+        /// Zero-based bar index.
+        bar: usize,
+        /// Zero-based track index.
+        track: usize,
+    },
     /// The written duration does not land exactly on the requested grid.
     #[error("bar {bar}, track {track}, voice {voice} contains an off-grid duration")]
     OffGrid {
+        /// Zero-based bar index.
         bar: usize,
+        /// Zero-based track index.
         track: usize,
+        /// Zero-based voice index.
         voice: usize,
     },
     /// The encoded material does not fill its time signature.
     #[error("bar {bar}, track {track}, voice {voice} does not fill the bar")]
     IncompleteBar {
+        /// Zero-based bar index.
         bar: usize,
+        /// Zero-based track index.
         track: usize,
+        /// Zero-based voice index.
         voice: usize,
     },
     /// A document voice runs past its meter.

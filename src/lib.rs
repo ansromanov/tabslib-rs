@@ -4,6 +4,8 @@
 //! an owned document model, deterministic analysis and edits, and generation
 //! capabilities built on that model.
 
+#![warn(missing_docs)]
+
 pub mod edits;
 pub mod error;
 pub mod evaluation;

@@ -86,7 +86,12 @@ pub struct RiffAdaptationPlan {
 pub enum RiffAdaptationError {
     /// The selected bar range is empty or outside the document.
     #[error("invalid riff bar range {start_bar}..={end_bar}")]
-    InvalidRange { start_bar: usize, end_bar: usize },
+    InvalidRange {
+        /// Zero-based first bar of the requested range.
+        start_bar: usize,
+        /// Zero-based last bar of the requested range.
+        end_bar: usize,
+    },
     /// The selected track does not exist or has no fretted tuning.
     #[error("track {0} is not a fretted track in this document")]
     InvalidTrack(usize),
@@ -119,7 +124,12 @@ pub enum RiffAdaptationError {
     MissingTempo,
     /// Meter is not a positive numerator over a supported power-of-two denominator.
     #[error("invalid target meter {numerator}/{denominator}")]
-    InvalidMeter { numerator: u32, denominator: u32 },
+    InvalidMeter {
+        /// Requested meter numerator.
+        numerator: u32,
+        /// Requested meter denominator.
+        denominator: u32,
+    },
     /// Exact meter scaling would overflow or leave a voice incomplete.
     #[error("meter change cannot preserve the exact onsets and full bars in the selected slice")]
     MeterNotRepresentable,
