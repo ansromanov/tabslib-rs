@@ -87,15 +87,23 @@ jobs:
             exit 1
           fi
 
-  # rust-version applies to everything except the HTTP connectors, whose
-  # transport needs Rust 1.88.
+  # rust-version in Cargo.toml, with every feature.
   msrv:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.85
+      - uses: dtolnay/rust-toolchain@1.88
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check --locked --features midi,musicxml,wav,ai
+      - run: cargo check --locked --all-features
+
+  # What a dependent gets: no lockfile, newest compatible versions of everything.
+  latest-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo update
+      - run: cargo test --all-features
 
   extras:
     runs-on: ubuntu-latest
@@ -113,7 +121,7 @@ jobs:
   # Single required status for branch protection.
   ci:
     if: always()
-    needs: [fmt, clippy, test, connectors, doc, core-only, msrv, extras]
+    needs: [fmt, clippy, test, connectors, doc, core-only, msrv, latest-deps, extras]
     runs-on: ubuntu-latest
     steps:
       - run: test '${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}' = 'false'

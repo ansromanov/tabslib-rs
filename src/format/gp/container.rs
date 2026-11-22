@@ -55,8 +55,8 @@ fn validate_limits(limits: ContainerLimits) -> Result<()> {
     Ok(())
 }
 
-fn read_entry(
-    file: &mut zip::read::ZipFile<'_>,
+fn read_entry<R: Read>(
+    file: &mut zip::read::ZipFile<'_, R>,
     limits: ContainerLimits,
     total: &mut usize,
 ) -> Result<Vec<u8>> {

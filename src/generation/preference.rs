@@ -134,7 +134,7 @@ pub fn assign_side(seed: u64) -> Side {
     // a reader who noticed would no longer be blind.
     let mut mixed = seed.wrapping_mul(0x9e37_79b9_7f4a_7c15);
     mixed ^= mixed >> 29;
-    if mixed.count_ones() % 2 == 0 {
+    if mixed.count_ones().is_multiple_of(2) {
         Side::First
     } else {
         Side::Second

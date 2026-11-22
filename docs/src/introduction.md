@@ -39,6 +39,6 @@ Transposing a track can. "Add a fill where the section changes" cannot.
 
 ## Status
 
-Version 0.1.0. The API is usable and tested but may still change
+Version 0.1.1. The API is usable and tested but may still change
 before 1.0, and the crate is not yet on crates.io. See the
 [roadmap](roadmap.md).

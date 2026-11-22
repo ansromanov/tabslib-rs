@@ -32,4 +32,4 @@ the connector's defaults. The connectors are also public types
 `OllamaProvider`) for callers who prefer to build them directly, and any type
 implementing `RationaleProvider` can stand in for them. Calls are synchronous;
 run them on a blocking worker from async code. Retries are off by default.
-The connectors need Rust 1.88 or newer; everything else builds on 1.85.
+The crate, connectors included, needs Rust 1.88 or newer.

@@ -5,7 +5,7 @@
 [![CI](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-book%20%26%20API-blue)](https://ansromanov.github.io/tabslib-rs/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
-![MSRV](https://img.shields.io/badge/rust-1.85%2B-orange)
+![MSRV](https://img.shields.io/badge/rust-1.88%2B-orange)
 
 ```sh
 cargo add tabslib --git https://github.com/ansromanov/tabslib-rs
@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Status
 
-**0.1.0.** Everything above is implemented and covered by more than
+**0.1.1.** Everything above is implemented and covered by more than
 500 tests, clippy runs with warnings denied, and every public item is documented.
 The API may still change before 1.0, and the crate is not yet on crates.io.
 See the [roadmap](ROADMAP.md) for what comes next.
@@ -72,7 +72,7 @@ See the [roadmap](ROADMAP.md) for what comes next.
 
 ## Install
 
-As a library (Rust 1.85+; 1.88+ for the HTTP AI connectors):
+As a library (Rust 1.88+):
 
 ```sh
 cargo add tabslib --git https://github.com/ansromanov/tabslib-rs

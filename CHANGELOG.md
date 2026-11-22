@@ -3,6 +3,19 @@
 All notable changes are recorded here. Releases are cut from Conventional
 Commits with `git-cliff`; see [releases](docs/src/releases.md).
 
+## 0.1.1 - 2026-11-22
+
+### Bug fixes
+
+- Build against `zip` 2.6, which a dependent resolves without the lockfile;
+  0.1.0 failed to compile there. CI now also tests with the newest compatible
+  dependencies.
+
+### Changes
+
+- Minimum supported Rust version is 1.88 for every feature (was 1.85 for all
+  but the AI connectors); the newest compatible dependencies need it.
+
 ## 0.1.0 - 2026-11-22
 
 ### Features

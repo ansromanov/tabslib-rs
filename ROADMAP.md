@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status: 0.1.0.** Everything listed under *Done* is implemented and
+**Status: 0.1.1.** Everything listed under *Done* is implemented and
 tested. The public API may still change before 1.0, and the crate is not yet on
 crates.io.
 
