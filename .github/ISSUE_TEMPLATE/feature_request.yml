@@ -1,0 +1,15 @@
+name: Feature request
+description: A format, edit, analysis or generation capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you want to do
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Can it be specified without naming a genre, a band, or a statistic measured over music?
+      description: Style-specific behaviour belongs in the calling application; see the roadmap's scope note.

@@ -72,5 +72,15 @@ doc-open:
 bench file:
     cargo run --release --example bench -- "{{file}}"
 
+# Build the book with the API reference inside it, as GitHub Pages does.
+book:
+    mdbook build docs
+    cargo doc --no-deps --all-features
+    rm -rf docs/book/api && cp -r target/doc docs/book/api
+
+book-serve:
+    mdbook serve docs --open
+
 clean:
     cargo clean
+    rm -rf docs/book

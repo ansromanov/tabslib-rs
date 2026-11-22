@@ -1,189 +1,119 @@
 # tabslib
 
+**Tablature and deterministic music generation for Rust.**
+
 [![CI](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ansromanov/tabslib-rs/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-book%20%26%20API-blue)](https://ansromanov.github.io/tabslib-rs/)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#license)
 ![MSRV](https://img.shields.io/badge/rust-1.85%2B-orange)
 
-A general-purpose tablature and deterministic music-generation library for Rust.
-
-An owned, immutable document model for fretted-instrument notation, codecs for
-the formats that carry it, and deterministic edits over both.
-
-Written from published format behaviour. No dependency on any vendor library.
-
-Generation, arrangement, and assessment capabilities operate on the same
-native `Document` model. Use the stable [`facade`](src/facade.rs) entry point
-for application workflows; style data is supplied by the caller.
-
-See [the native API guide](docs/native-api.md) for the facade, capability
-statuses, and examples.
-
-## Formats
-
-Formats are adapters behind a trait; the core knows nothing about files.
-Reading and writing are separate capabilities, because a rendering is a view of
-a score rather than a container for one.
-
-| adapter | reads | writes | round-trips | feature |
-| --- | :-: | :-: | :-: | --- |
-| `gp` — version 7 and 8 containers | yes | yes | yes | `gp` *(default)* |
-| `ascii` — plain-text tablature | no | yes | no | `ascii` |
-| `html` — standalone responsive tablature | no | yes | no | `html` |
-| `pdf` — deterministic print tablature | no | yes | no | `pdf` |
-| `midi` | yes | yes | yes | `midi` |
-| `musicxml` | yes | yes | yes | `musicxml` |
-| `wav` — PCM rendering | no | yes | no | `wav` |
-
-`cargo build --no-default-features` gives you the model, inspection and edits
-with no format code and `thiserror` as the only dependency. CI enforces it.
-
-See [docs/architecture.md](docs/architecture.md).
-
-## Status — 0.1
-
-Reading and writing are covered by deterministic model and codec tests. The GP
-adapter retains unmodelled container data, and the interchange/rendering
-adapters are feature-gated.
-
-| | |
-| --- | --- |
-| container | zip read and write, deterministic (fixed timestamp) |
-| read | tracks, tunings, colours, master bars, sections, time signatures, clefs, bars, voices, beats, rhythms, notes, techniques |
-| techniques | palm mute, dead, tapped, hammer-on/pull-off, let-ring, vibrato, slide (with flags), bend (with values), harmonics (with type and fret) |
-| write | the above, in the shapes the originating application emits |
-| **not yet** | stylesheets, extended properties, lyrics, chord diagrams, automations, older container versions |
-
-Unknown GP container entries and unmodelled GPIF content are retained where the
-adapter can patch the edited model in place; structural edits fall back to
-deterministic regeneration.
-
-## Usage
-
-```rust
-use tabslib::{format::gp::Gp, ReadFormat, WriteFormat};
-
-let bytes = std::fs::read("song.gp")?;
-
-// whichever compiled-in adapter recognises the bytes
-let doc = tabslib::load(&bytes)?;
-// or name the format, for a precise error when it is malformed
-let doc = Gp::read(&bytes)?;
-
-println!("{} — {} notes, {} sections", doc.title, doc.note_count(), doc.section_count());
-
-let out = Gp::write(&doc)?;
+```sh
+cargo add tabslib --git https://github.com/ansromanov/tabslib-rs
 ```
 
-Adding a format means implementing one trait and touching nothing else:
+tabslib reads, inspects, edits and writes fretted-instrument notation — Guitar
+Pro 7/8, MIDI, MusicXML — and renders it as ASCII tablature, HTML, PDF or WAV.
+On the same document model it generates drums, bass, harmony, solos, riffs and
+whole arrangements from a seed, and assesses the result. Everything is
+deterministic: the same input and seed always give the same score.
 
 ```rust
-impl WriteFormat for MyRendering {
-    const NAME: &'static str = "myrendering";
-    fn write(doc: &Document) -> Result<Vec<u8>> { /* ... */ }
+use tabslib::format::{ascii, gp::Gp};
+use tabslib::{pitch, ReadFormat, WriteFormat};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut doc = tabslib::fixtures::power_chords(); // or tabslib::load(&std::fs::read("song.gp")?)?
+    pitch::transpose(&mut doc, 2)?;                  // up a whole tone
+    println!("{}", ascii::render_track(&doc, 0, 0, 3)?);
+
+    let bytes = Gp::write(&doc)?;                    // lossless round trip
+    assert_eq!(Gp::read(&bytes)?.note_count(), doc.note_count());
+    Ok(())
 }
 ```
 
-## Scope
+## Features
 
-The library owns the score model, codecs, deterministic edits, descriptive
-inspection, and style-neutral generation, arrangement, and assessment. It does
-not embed a genre, a style identity, reference data, or provider-specific AI
-policy. Keep those decisions in the calling application and supply calibration
-data as an external input.
+- **Formats** — GP7/8 read and write with a lossless round trip; MIDI and
+  MusicXML read and write; ASCII, HTML, PDF and WAV rendering. Each format is a
+  feature; the core builds with `thiserror` as its only dependency.
+- **Exact model** — an owned, immutable document with rhythm as exact
+  fractions, never floats, and nodes linked by id.
+- **Inspection** — statistics, key and mode with confidence, chords with Roman
+  numerals, bar integrity.
+- **Deterministic edits** — transpose, retune (keeping pitch or fingering),
+  slice, splice, techniques over a selection; guards refuse to leave an
+  over-full bar or unplayable note.
+- **Generation** — seeded drums with limb-aware playability, bass, harmony,
+  second guitar, solos, riffs from a declarative spec, arrangements and search.
+- **Assessment** — structural and quality metrics compared against reference
+  values you supply; nothing style-specific is compiled in.
+- **AI, optional** — rationale and candidate comparison through Anthropic,
+  OpenAI-compatible, Gemini or Ollama connectors, off by default.
+- **No score files in the repo** — every test builds its documents in code
+  with `tabslib::fixtures`.
 
-## AI connectors
+## Status
 
-AI support is optional and off by default. The `ai` feature adds prompt
-construction over structured assessment facts, response validation, blind
-candidate comparison and the `RationaleProvider` trait; it makes no network
-calls. Each connector is a separate feature on top of it:
+**0.1, pre-release.** Everything above is implemented and covered by more than
+500 tests, clippy runs with warnings denied, and every public item is documented.
+The API may still change before 1.0, and the crate is not yet on crates.io.
+See the [roadmap](ROADMAP.md) for what comes next.
 
-| feature | service | API key (when not set on the config) |
-| --- | --- | --- |
-| `ai-anthropic` | Anthropic Messages API, default model `claude-sonnet-5-5` | `ANTHROPIC_API_KEY` |
-| `ai-openai-compatible` | any OpenAI-compatible Chat Completions endpoint | `OPENAI_API_KEY`, optional |
-| `ai-gemini` | Google Gemini | `GEMINI_API_KEY` |
-| `ai-ollama` | an Ollama server | none |
+| area | state |
+| --- | --- |
+| GP7/8 codec | complete for the modelled content; lossless round trip |
+| MIDI, MusicXML | read and write |
+| ASCII, HTML, PDF, WAV | write |
+| Inspection and edits | complete |
+| Generation and assessment | complete, API may change |
+| AI connectors | complete, off by default |
+| GP not yet modelled | stylesheets, extended properties, lyrics, chord diagrams, automations |
 
-Configure any of them through one type, `AiConfig`:
+## Install
 
-```rust,ignore
-use tabslib::generation::ai::{generate_rationale, AiConfig, AiConnector, PromptInput, ProviderOptions};
-use tabslib::generation::assessment::assess;
-
-let provider = AiConfig::new(AiConnector::Anthropic)
-    .with_options(ProviderOptions::default().with_max_retries(2))
-    .build()?;
-
-let report = assess(&document);
-let rationale = generate_rationale(&provider, PromptInput::rationale("draft", &report))?;
-```
-
-`with_model`, `with_endpoint`, `with_api_key` and `with_max_tokens` override
-the connector's defaults. The connectors are also public types
-(`AnthropicProvider`, `OpenAiCompatibleProvider`, `GeminiProvider`,
-`OllamaProvider`) for callers who prefer to build them directly, and any type
-implementing `RationaleProvider` can stand in for them. Calls are synchronous;
-run them on a blocking worker from async code. Retries are off by default.
-The connectors need Rust 1.88 or newer; everything else builds on 1.85.
-
-## Design notes
-
-Three decisions worth stating, because each is a place the format punishes a
-plausible-looking implementation.
-
-**Rhythm is never a float.** Converting a written duration to a `f64` and
-looking it up in a table needs a fallback for values that miss, and that
-fallback silently rewrites the music — a missed lookup turns a triplet into a
-quarter note while the note count stays correct, so nothing downstream notices.
-`Rhythm` keeps the written value, the augmentation dots and the tuplet
-separately, and `as_fraction()` is exact integer arithmetic.
-
-**Several techniques live in attributes, not element names.** The XML payload
-writes `<Property name="PalmMuted">`. A reader that matches on element names
-sees `Property` and finds nothing, so a file full of palm mutes reads as having
-none. `Element::property()` exists so that lookup is explicit.
-
-**Rhythms are referenced, not inlined.** The payload writes `<Rhythm ref="N"/>`
-against a keyed `<Rhythm id="N">` table, and spells sixteenths `16th`, not
-`Sixteenth`. Writing either differently produces a file that neither the
-originating application nor a correct reader resolves.
-
-Nodes reference each other by id. There are no `parent`, `next` or `previous`
-links, so ownership stays a tree and edits stay value-shaped.
-
-## Testing
+As a library (Rust 1.85+; 1.88+ for the HTTP AI connectors):
 
 ```sh
-cargo test
-cargo run --release --example bench -- song.gp
+cargo add tabslib --git https://github.com/ansromanov/tabslib-rs
+# pick formats and features
+cargo add tabslib --git https://github.com/ansromanov/tabslib-rs --features midi,musicxml,ai-anthropic
 ```
 
-No files are needed and none are committed. `tabslib::fixtures` generates test
-documents in code from generic instrumental material — every note value plain,
-dotted, triplet and quintuplet; repeated frets; a two-octave scale run; power
-chords; one bar per technique; standard drum patterns (straight beat, double
-kick, blast, fill); six time signatures with section markers; a bass line.
+The `tabs` command-line tool (`info`, `tab`, `transpose`, `slice`, `midi`):
 
-The tests assert **invariants**: save, reload, and check that the duration
-histogram, the technique census and every string/fret position are unchanged.
+```sh
+cargo install --git https://github.com/ansromanov/tabslib-rs tabs
+tabs tab song.gp --start 3 --end 6
+```
 
-**Rule for new tests:** state what the test would report if the feature under
-test were silently dropped. If the answer is "pass", the test is wrong. Note
-count, title and track count all stay correct while rhythm and articulation are
-being destroyed, so none of them is sufficient on its own.
+See [installation](https://ansromanov.github.io/tabslib-rs/installation.html)
+for the full feature table.
 
-These tests are mutation-checked. Removing tuplet output from the writer — the
-exact shape of a real defect, where note count stays correct and every triplet
-becomes a quarter — fails two of them.
+## Documentation
 
-`fixtures` is public, so downstream crates can use the same documents.
+- [The tabslib book](https://ansromanov.github.io/tabslib-rs/) — quick start,
+  formats, the application API, generation, AI connectors, architecture
+- [API reference](https://ansromanov.github.io/tabslib-rs/api/tabslib/) — rustdoc
+  for every public item
+- [Examples](examples/) — runnable with `cargo run --example <name>`
+
+## Development
+
+```sh
+just check     # fmt, clippy, tests, docs, the no-format core build
+just test      # tests only
+just doc-open  # build and open the API docs
+```
+
+Without `just`, see [CONTRIBUTING.md](CONTRIBUTING.md) for the plain `cargo`
+commands. CI runs the same gate on every pull request.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [CONTENT-POLICY.md](CONTENT-POLICY.md).
-Every change lands through a pull request that passes format, clippy, tests and
-documentation.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+workflow and [CONTENT-POLICY.md](CONTENT-POLICY.md) before adding any file: no
+third-party musical content, ever.
 
 ## Trademarks
 

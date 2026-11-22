@@ -60,3 +60,8 @@ pub fn save(doc: &Document) -> Result<Vec<u8>> {
     <format::gp::Gp as WriteFormat>::write(doc)
 }
 pub use model::Document;
+
+/// Compiles and runs the Rust examples in `README.md` as doctests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeDoctests;

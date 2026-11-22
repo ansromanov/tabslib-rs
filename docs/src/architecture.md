@@ -149,5 +149,30 @@ Applications can use the stable `tabslib::facade` path for inspection, edits,
 generation, arrangement, assessment, and optional byte-oriented format
 adapters. The facade operates on `Document`; it does not restore a
 format-library score model or silently route unsupported work to another
-engine. See [the native API guide](native-api.md) for request and result types
+engine. See [the native API guide](api.md) for request and result types
 and capability statuses.
+
+## Design notes
+
+Three decisions worth stating, because each is a place the format punishes a
+plausible-looking implementation.
+
+**Rhythm is never a float.** Converting a written duration to a `f64` and
+looking it up in a table needs a fallback for values that miss, and that
+fallback silently rewrites the music — a missed lookup turns a triplet into a
+quarter note while the note count stays correct, so nothing downstream notices.
+`Rhythm` keeps the written value, the augmentation dots and the tuplet
+separately, and `as_fraction()` is exact integer arithmetic.
+
+**Several techniques live in attributes, not element names.** The XML payload
+writes `<Property name="PalmMuted">`. A reader that matches on element names
+sees `Property` and finds nothing, so a file full of palm mutes reads as having
+none. `Element::property()` exists so that lookup is explicit.
+
+**Rhythms are referenced, not inlined.** The payload writes `<Rhythm ref="N"/>`
+against a keyed `<Rhythm id="N">` table, and spells sixteenths `16th`, not
+`Sixteenth`. Writing either differently produces a file that neither the
+originating application nor a correct reader resolves.
+
+Nodes reference each other by id. There are no `parent`, `next` or `previous`
+links, so ownership stays a tree and edits stay value-shaped.

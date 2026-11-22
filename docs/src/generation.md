@@ -1,4 +1,4 @@
-# Architecture
+# Generation architecture
 
 ```text
                  tabslib

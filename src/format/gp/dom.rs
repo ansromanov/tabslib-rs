@@ -60,8 +60,8 @@ impl Element {
             .map(|c| c.text.trim())
             .filter(|t| !t.is_empty())
     }
-    /// A GPIF `<Property name="X">` lookup. The previous engine matched element
-    /// names here and so could never see palm mutes, slides or bends at all.
+    /// A GPIF `<Property name="X">` lookup. Palm mutes, slides and bends live in
+    /// attributes, so a reader that matches element names never sees them.
     pub fn property(&self, name: &str) -> Option<&Element> {
         self.child("Properties")
             .into_iter()

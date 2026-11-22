@@ -31,14 +31,14 @@ assessment. Ask:
 > Can this be specified without naming a genre, a band, or a statistic measured
 > over a collection of music?
 
-If not, it belongs in the calling application. See [ROADMAP.md](ROADMAP.md).
+If not, it belongs in the calling application. See [ROADMAP.md](https://github.com/ansromanov/tabslib-rs/blob/main/ROADMAP.md).
 
-Read [CONTENT-POLICY.md](CONTENT-POLICY.md) before adding any file: no
+Read [CONTENT-POLICY.md](https://github.com/ansromanov/tabslib-rs/blob/main/CONTENT-POLICY.md) before adding any file: no
 third-party musical content and no copyrighted reference texts, ever.
 
 ## License of contributions
 
-The project is dual-licensed under [MIT](LICENSE-MIT) or
-[Apache-2.0](LICENSE-APACHE), at your option. Unless you explicitly state
+The project is dual-licensed under [MIT](https://github.com/ansromanov/tabslib-rs/blob/main/LICENSE-MIT) or
+[Apache-2.0](https://github.com/ansromanov/tabslib-rs/blob/main/LICENSE-APACHE), at your option. Unless you explicitly state
 otherwise, any contribution you submit for inclusion is dual-licensed the same
 way, without additional terms or conditions.

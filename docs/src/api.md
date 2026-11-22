@@ -51,7 +51,7 @@ and adds Roman numerals against the estimated key. Use
 interval pairs, exact overlap durations, and a normalized weighted friction
 ratio. Percussion tracks are omitted from these analyses.
 
-The runnable [native workflow example](../examples/native_generation.rs)
+The runnable [native workflow example](https://github.com/ansromanov/tabslib-rs/blob/main/examples/native_generation.rs)
 combines inspection, edits, seeded drum and bass generation, harmony,
 arrangement, assessment, and an optional format round trip using generated
 fixtures. Build it with the crate's default features using

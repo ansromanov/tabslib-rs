@@ -1,5 +1,4 @@
-//! Load / save / walk timing, comparable to the same operation in the
-//! TypeScript engine.
+//! Load, save and walk timing for one score file.
 use std::time::Instant;
 
 fn main() {
