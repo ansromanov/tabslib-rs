@@ -300,7 +300,7 @@ fn onsets(spec: &RiffSpec, rng: &mut Rng) -> Vec<bool> {
                 .collect()
         }
         RiffArchetype::PedalTone => (0..steps)
-            .map(|step| step % 2 == 0 || rng.next() % 4 == 0)
+            .map(|step| step % 2 == 0 || rng.next().is_multiple_of(4))
             .collect(),
     }
 }

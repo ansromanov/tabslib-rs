@@ -1,6 +1,6 @@
 # Installation
 
-tabslib needs Rust 1.85 or newer (1.88 for the HTTP AI connectors). It is not
+tabslib needs Rust 1.88 or newer. It is not
 yet published to crates.io, so depend on it from Git.
 
 ## As a library
@@ -16,7 +16,7 @@ or in `Cargo.toml`:
 tabslib = { git = "https://github.com/ansromanov/tabslib-rs" }
 ```
 
-Pin a release with `tag = "v0.1.0"`, or a revision with `rev = "<commit>"`.
+Pin a release with `tag = "v0.1.1"`, or a revision with `rev = "<commit>"`.
 
 ## Choosing features
 

@@ -417,7 +417,7 @@ fn apply_role(
                 let target_pitch = match role {
                     GuitarRole::Support => pitch,
                     GuitarRole::Double => {
-                        if event % 2 == 0 {
+                        if event.is_multiple_of(2) {
                             pitch
                         } else {
                             octave_pitch(pitch, config)?

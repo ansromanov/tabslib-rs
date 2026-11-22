@@ -754,7 +754,7 @@ fn apply_climax_texture(doc: &mut Document, start: usize, end: usize) {
                         for note in &mut beat.notes {
                             if note.articulation == Some(38) {
                                 snare += 1;
-                                if snare % 2 == 0 {
+                                if snare.is_multiple_of(2) {
                                     note.articulation = Some(42);
                                     note.midi = Some(42);
                                 }

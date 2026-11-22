@@ -254,7 +254,7 @@ pub fn beat_positions(
                 onset,
                 duration,
                 step: (quotient / divisor) as u32,
-                exact: quotient % divisor == 0,
+                exact: quotient.is_multiple_of(divisor),
             };
             onset = onset.plus(duration);
             result
