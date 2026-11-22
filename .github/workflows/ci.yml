@@ -105,6 +105,15 @@ jobs:
       - run: cargo update
       - run: cargo test --all-features
 
+  # The crate as crates.io would receive it: packaged files only, built alone.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish --dry-run --locked
+
   extras:
     runs-on: ubuntu-latest
     steps:
@@ -121,7 +130,7 @@ jobs:
   # Single required status for branch protection.
   ci:
     if: always()
-    needs: [fmt, clippy, test, connectors, doc, core-only, msrv, latest-deps, extras]
+    needs: [fmt, clippy, test, connectors, doc, core-only, msrv, latest-deps, package, extras]
     runs-on: ubuntu-latest
     steps:
       - run: test '${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}' = 'false'
