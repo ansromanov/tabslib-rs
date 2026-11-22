@@ -108,11 +108,23 @@ fn retune_rejects_a_track_outside_the_document_instead_of_panicking() {
 
     let mut doc = original.clone();
     let error = pitch::retune_preserve_pitch(&mut doc, missing, &tuning).unwrap_err();
-    assert!(matches!(error, pitch::PitchError::InvalidSelection(_)), "{error}");
-    assert_eq!(doc, original, "a rejected retune must not change the document");
+    assert!(
+        matches!(error, pitch::PitchError::InvalidSelection(_)),
+        "{error}"
+    );
+    assert_eq!(
+        doc, original,
+        "a rejected retune must not change the document"
+    );
 
     let mut doc = original.clone();
     let error = pitch::retune_preserve_fingering(&mut doc, missing, &tuning).unwrap_err();
-    assert!(matches!(error, pitch::PitchError::InvalidSelection(_)), "{error}");
-    assert_eq!(doc, original, "a rejected retune must not change the document");
+    assert!(
+        matches!(error, pitch::PitchError::InvalidSelection(_)),
+        "{error}"
+    );
+    assert_eq!(
+        doc, original,
+        "a rejected retune must not change the document"
+    );
 }
