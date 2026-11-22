@@ -220,8 +220,8 @@ fn h6_counts_fretted_tracks_and_ignores_bass_and_percussion() {
         .map(|m| m.bar_ids[0] as u32)
         .collect();
     for (index, master) in doc.master_bars.iter_mut().enumerate() {
-        for slot in 1..3 {
-            master.bar_ids[slot] = source[index] as i32;
+        for slot in &mut master.bar_ids[1..3] {
+            *slot = source[index] as i32;
         }
     }
 

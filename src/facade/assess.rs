@@ -156,9 +156,8 @@ fn extract_hits_for_range(
         let Some(bar) = bar_for(doc, bar_idx, track) else {
             continue;
         };
-        for voice_idx in 0..bar.voices.len() {
+        for (voice_idx, voice) in bar.voices.iter().enumerate() {
             let positions = beat_positions(doc, bar_idx, track, voice_idx);
-            let voice = &bar.voices[voice_idx];
             for pos in positions {
                 let Some(beat) = voice.beats.get(pos.beat_index) else {
                     continue;

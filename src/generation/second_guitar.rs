@@ -331,8 +331,8 @@ fn section_ranges(doc: &Document) -> Vec<(usize, usize)> {
         return Vec::new();
     }
     let mut starts = vec![0];
-    for index in 1..doc.master_bars.len() {
-        if doc.master_bars[index].section.is_some() {
+    for (index, master) in doc.master_bars.iter().enumerate().skip(1) {
+        if master.section.is_some() {
             starts.push(index);
         }
     }
