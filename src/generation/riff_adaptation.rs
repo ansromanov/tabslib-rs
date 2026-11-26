@@ -145,6 +145,18 @@ pub enum RiffAdaptationError {
 ///
 /// The function uses [`determine_key`] on the selected bars. It never changes
 /// `document`; use [`apply_riff_adaptation`] after reviewing the returned plan.
+///
+/// # Errors
+///
+/// Returns [`RiffAdaptationError::InvalidRange`] or [`RiffAdaptationError::InvalidTrack`] if the
+/// bars or track are invalid or the track is not fretted. Returns
+/// [`RiffAdaptationError::InvalidFretWindow`], [`RiffAdaptationError::InvalidTargetKey`],
+/// [`RiffAdaptationError::InvalidTempo`] or [`RiffAdaptationError::InvalidMeter`] for an invalid
+/// request field. Returns [`RiffAdaptationError::NoKey`] if the slice has no key estimate,
+/// [`RiffAdaptationError::NoPlayableTransposition`] if no octave fits the fret window,
+/// [`RiffAdaptationError::MissingTempo`] if a tempo change is requested but none is written, and
+/// [`RiffAdaptationError::MeterNotRepresentable`] if a meter change is requested over bars that
+/// are not exactly full.
 pub fn plan_riff_adaptation(
     document: &Document,
     request: RiffAdaptationRequest,
@@ -232,6 +244,16 @@ pub fn plan_riff_adaptation(
 }
 
 /// Applies a previously inspected plan to its score slice without dropping notes.
+///
+/// # Errors
+///
+/// Returns [`RiffAdaptationError::InvalidRange`], [`RiffAdaptationError::InvalidTrack`],
+/// [`RiffAdaptationError::InvalidFretWindow`], [`RiffAdaptationError::InvalidTargetKey`] or
+/// [`RiffAdaptationError::InvalidTempo`] if the plan no longer fits `document` or holds invalid
+/// values. Returns [`RiffAdaptationError::StalePlan`] if the slice's key, tempo or meters differ
+/// from those the plan was made from, and [`RiffAdaptationError::NoPlayableTransposition`] or
+/// [`RiffAdaptationError::MeterNotRepresentable`] if the change cannot be applied exactly.
+/// `document` is unchanged on error.
 pub fn apply_riff_adaptation(
     document: &mut Document,
     plan: &RiffAdaptationPlan,

@@ -85,6 +85,12 @@ pub struct RiffStab {
 }
 
 /// Finds content boundaries using adjacent-bar fingerprints and preserves authored markers.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::InvalidThreshold`] if `threshold` is not finite or
+/// outside `0..=1`, and [`SectionAnalysisError::Arrangement`] if a bar cannot be
+/// fingerprinted.
 pub fn detect_section_boundaries(
     document: &Document,
     threshold: f64,
@@ -116,6 +122,11 @@ pub fn detect_section_boundaries(
 }
 
 /// Converts boundary indexes into inclusive section ranges.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::InvalidBoundary`] if a boundary is at bar 0 or at or past
+/// `bar_count`.
 pub fn sections_from_boundaries(
     bar_count: usize,
     boundaries: &[SectionBoundary],
@@ -150,6 +161,13 @@ pub fn sections_from_boundaries(
 }
 
 /// Proposes merges where adjacent sections are at least `similarity_threshold` similar.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::InvalidThreshold`] if `similarity_threshold` is not
+/// finite or outside `0..=1`, [`SectionAnalysisError::InvalidBoundary`] if a boundary is
+/// outside the score, and [`SectionAnalysisError::Arrangement`] if a bar cannot be
+/// fingerprinted.
 pub fn propose_section_merges(
     document: &Document,
     boundaries: &[SectionBoundary],
@@ -179,6 +197,11 @@ pub fn propose_section_merges(
 }
 
 /// Proposes folding every one-bar section into its most similar neighbour.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::InvalidBoundary`] if a boundary is outside the score,
+/// and [`SectionAnalysisError::Arrangement`] if a bar cannot be fingerprinted.
 pub fn propose_single_bar_folds(
     document: &Document,
     boundaries: &[SectionBoundary],
@@ -226,6 +249,11 @@ pub fn propose_single_bar_folds(
 }
 
 /// Builds caller-labeled marker proposals in boundary order.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::MarkerLabelCount`] if `labels` and `boundaries` differ in
+/// length, and [`SectionAnalysisError::EmptyMarkerLabel`] if any label is blank.
 pub fn propose_section_markers(
     boundaries: &[SectionBoundary],
     labels: &[String],
@@ -250,6 +278,13 @@ pub fn propose_section_markers(
 }
 
 /// Applies marker proposals explicitly, filling empty marker positions only.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::InvalidBoundary`] if a proposal's bar is outside the
+/// score, [`SectionAnalysisError::EmptyMarkerLabel`] if a label is blank, and
+/// [`SectionAnalysisError::Edit`] if setting a marker fails. Proposals are validated before
+/// any marker is written.
 pub fn apply_section_marker_proposals(
     document: &mut Document,
     proposals: &[SectionMarkerProposal],
@@ -277,6 +312,11 @@ pub fn apply_section_marker_proposals(
 }
 
 /// Finds accented onsets with no other attack within `isolation_steps`.
+///
+/// # Errors
+///
+/// Returns [`SectionAnalysisError::NoSourceTracks`] if `tracks` is empty, and
+/// [`SectionAnalysisError::InvalidSourceTrack`] if a track index is outside the document.
 pub fn detect_riff_stabs(
     document: &Document,
     tracks: &[usize],

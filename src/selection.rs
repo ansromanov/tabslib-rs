@@ -124,6 +124,12 @@ fn check(doc: &Document, before: &IntegrityState) -> Result<(), SelectionError> 
 }
 
 /// Applies a technique once to every selected note (idempotent).
+///
+/// # Errors
+///
+/// Returns [`SelectionError::InvalidSelection`] if the document has no bars or the selected track
+/// or bar range is outside it, and [`SelectionError::Overfull`] if the edit would introduce an
+/// over-full voice.
 pub fn set_technique(
     doc: &mut Document,
     selection: Selection,
@@ -142,6 +148,12 @@ pub fn set_technique(
 }
 
 /// Clears an exact technique from every selected note.
+///
+/// # Errors
+///
+/// Returns [`SelectionError::InvalidSelection`] if the document has no bars or the selected track
+/// or bar range is outside it, and [`SelectionError::Overfull`] if the edit would introduce an
+/// over-full voice.
 pub fn clear_technique(
     doc: &mut Document,
     selection: Selection,
@@ -159,10 +171,20 @@ pub fn clear_technique(
 }
 
 /// Sets the accent technique on every selected note.
+///
+/// # Errors
+///
+/// Returns the same errors as [`set_technique`].
 pub fn set_accent(doc: &mut Document, selection: Selection) -> Result<(), SelectionError> {
     set_technique(doc, selection, Technique::Accent)
 }
 /// Sets or clears a written dynamic on beats containing selected notes.
+///
+/// # Errors
+///
+/// Returns [`SelectionError::InvalidSelection`] if the document has no bars or the selected track
+/// or bar range is outside it, and [`SelectionError::Overfull`] if the edit would introduce an
+/// over-full voice.
 pub fn set_dynamic(
     doc: &mut Document,
     selection: Selection,
@@ -178,6 +200,13 @@ pub fn set_dynamic(
 }
 
 /// Re-fingers selected notes onto one target string without changing MIDI pitch.
+///
+/// # Errors
+///
+/// Returns [`SelectionError::InvalidSelection`] if the selected track or bar range is outside the
+/// document, [`SelectionError::Unplayable`] if `target_string` does not exist in a selected
+/// track's tuning or a pitched note would need a negative fret, and [`SelectionError::Overfull`]
+/// if the edit would introduce an over-full voice.
 pub fn refinger(
     doc: &mut Document,
     selection: Selection,
@@ -216,6 +245,12 @@ pub fn refinger(
 }
 
 /// Splits a voice at a beat index, preserving beat order and durations.
+///
+/// # Errors
+///
+/// Returns [`SelectionError::InvalidSelection`] if the track, bar, voice, or `at_beat` (greater
+/// than the voice's beat count) does not exist, and [`SelectionError::Overfull`] if the edit
+/// would introduce an over-full voice.
 pub fn split_voice(
     doc: &mut Document,
     track: usize,
@@ -257,6 +292,11 @@ pub fn split_voice(
 }
 
 /// Merges a source voice into a target voice and removes the source voice.
+///
+/// # Errors
+///
+/// Returns [`SelectionError::InvalidSelection`] if `target == source`, the track, bar, or either
+/// voice does not exist, and [`SelectionError::Overfull`] if the merged voice is over-full.
 pub fn merge_voices(
     doc: &mut Document,
     track: usize,

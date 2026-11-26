@@ -178,6 +178,12 @@ fn read_var(bytes: &[u8], at: &mut usize) -> Option<u32> {
 }
 
 /// Imports note-on events from a standard MIDI file into one 4/4 track.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if the bytes lack an `MThd` header, the header or a track is
+/// truncated or invalid, the time division is zero or SMPTE, an event is truncated, or the
+/// resulting bar count or positions overflow.
 pub fn read(bytes: &[u8]) -> Result<Document> {
     if !bytes.starts_with(b"MThd") {
         return Err(Error::Malformed("missing MIDI header".into()));

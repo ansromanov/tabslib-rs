@@ -71,6 +71,11 @@ pub struct SoloPopulationCandidate {
 }
 
 /// Generates seeded solo candidates without imposing a musical ranking.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `count` is zero. Otherwise returns the first error from
+/// [`generate_solo`] for any candidate.
 pub fn generate_solo_population(
     source: &Document,
     config: &SoloConfig,

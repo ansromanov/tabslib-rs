@@ -204,6 +204,13 @@ fn assess_range(
 }
 
 /// Performs fast, offline drum track assessment against a reference pitched track.
+///
+/// # Errors
+///
+/// Returns [`DrumAssessError::NoPercussionTrack`] or [`DrumAssessError::NoSourceTrack`] if the
+/// selected or default track is missing, [`DrumAssessError::SectionNotFound`] if `options.section`
+/// matches no section, and [`DrumAssessError::InvalidBarRange`] if the score is empty or the
+/// requested bar range is reversed or past the last bar.
 pub fn assess_drums_fast(
     document: &Document,
     options: AssessDrumsOptions,

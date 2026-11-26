@@ -35,6 +35,11 @@ impl FormTemplate {
 ///
 /// The returned requests are ordinary editable plan slots; callers can alter
 /// individual lengths, candidate indexes, labels, or transpositions before assembly.
+///
+/// # Errors
+///
+/// Returns [`ArrangementError::InvalidInput`] if `bars_per_section` is zero or `candidates` is
+/// empty.
 pub fn plan_form(
     template: FormTemplate,
     bars_per_section: usize,

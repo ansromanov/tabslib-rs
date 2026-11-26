@@ -134,6 +134,11 @@ fn edit_details(edit: &PlanEdit) -> (String, String, Option<String>) {
 ///
 /// Each edit is executed in sequence. Invalid addresses or parameters are
 /// captured in `rejected` while remaining valid edits apply.
+///
+/// # Errors
+///
+/// Returns [`IntentError::EmptyIntent`] if the intent description is empty or only whitespace.
+/// Failures of individual edits are reported in `rejected`, not as an error.
 pub fn apply_intent(
     original_plan: &ArrangementPlan,
     request: &ArrangementIntent,

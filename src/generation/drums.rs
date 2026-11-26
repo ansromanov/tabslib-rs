@@ -419,6 +419,11 @@ impl DrumPattern {
 
     /// Converts a validated caller-owned catalog pattern to the drum
     /// generator's bar representation without changing articulation metadata.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`super::pattern_catalog::PatternError`] if the pattern's grid has an invalid
+    /// meter or subdivision, no whole bar width, or a width that overflows.
     pub fn from_catalog_pattern(
         pattern: &super::pattern_catalog::CatalogPattern<PatternStep>,
     ) -> Result<Self, super::pattern_catalog::PatternError> {

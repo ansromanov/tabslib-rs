@@ -45,6 +45,11 @@ impl std::fmt::Debug for Soundfont {
 
 impl Soundfont {
     /// Parses a SoundFont2 file.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Io`] if the file cannot be opened, and any error from
+    /// [`Soundfont::read`] if its contents are not valid SoundFont2 data.
     pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
@@ -52,6 +57,10 @@ impl Soundfont {
     }
 
     /// Parses a SoundFont2 bank from an open reader.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if the reader's contents are not valid SoundFont2 data.
     pub fn read(reader: &mut (impl Read + Seek)) -> Result<Self> {
         let bank = SoundFont::new(reader)
             .map_err(|error| Error::Malformed(format!("invalid SoundFont2 data: {error}")))?;
@@ -87,6 +96,11 @@ impl std::fmt::Debug for PerformanceStream {
 
 impl PerformanceStream {
     /// Starts a stream over `performance` at frame zero.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if the sample rate is outside the MIDI range or the
+    /// SoundFont synthesizer cannot be initialized.
     pub fn new(performance: &CompiledPerformance, soundfont: &Soundfont) -> Result<Self> {
         let settings = SynthesizerSettings::new(
             i32::try_from(SAMPLE_RATE)
@@ -127,6 +141,11 @@ impl PerformanceStream {
     ///
     /// The stream stops at the end of the performance, so a short or zero
     /// return says the score is finished rather than that anything failed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::Error::Malformed`] if the requested length overflows the output, the PCM
+    /// buffer cannot be allocated, or the audio cursor overflows.
     pub fn render(&mut self, frames: usize, output: &mut Vec<i16>) -> Result<usize> {
         self.core.render(frames, output)
     }

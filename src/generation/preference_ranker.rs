@@ -68,12 +68,23 @@ pub struct PreferenceRanker {
 
 impl PreferenceRanker {
     /// Serializes this model as pretty JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PreferenceRankerError::Serialization`] if the model cannot be encoded as JSON.
     pub fn to_json(&self) -> Result<String, PreferenceRankerError> {
         serde_json::to_string_pretty(self)
             .map_err(|error| PreferenceRankerError::Serialization(error.to_string()))
     }
 
     /// Parses a model and rejects unknown or invalid schema data.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PreferenceRankerError::Serialization`] if `json` does not parse as a model and
+    /// [`PreferenceRankerError::UnsupportedVersion`] for another schema version. Returns
+    /// [`PreferenceRankerError::InvalidModel`] if the model has no records or weights, or a weight
+    /// is not finite or has a non-positive scale.
     pub fn from_json(json: &str) -> Result<Self, PreferenceRankerError> {
         let model: Self = serde_json::from_str(json)
             .map_err(|error| PreferenceRankerError::Serialization(error.to_string()))?;
@@ -153,6 +164,13 @@ pub enum PreferenceRankerError {
 /// `minimum_decisive_records` is caller policy: the library does not decide
 /// how much listening data is enough to trust a model. No-preference and
 /// both-bad records are skipped.
+///
+/// # Errors
+///
+/// Returns [`PreferenceRankerError::TooFewDecisive`] if there are fewer decisive records than
+/// `minimum_decisive_records` (at least one is always required). Returns
+/// [`PreferenceRankerError::InconsistentMetrics`] if a decisive record has the wrong schema
+/// version or its two candidates do not carry the same non-empty set of metrics.
 pub fn train_preference_ranker(
     examples: &[PreferenceTrainingPair],
     minimum_decisive_records: usize,
@@ -302,6 +320,10 @@ pub fn rank_preference_candidates(
 }
 
 /// Measures agreement with held-out decisive comparisons.
+///
+/// # Errors
+///
+/// Returns [`PreferenceRankerError::EmptyEvaluation`] if `examples` has no decisive choice.
 pub fn preference_ranker_agreement(
     model: &PreferenceRanker,
     examples: &[PreferenceTrainingPair],

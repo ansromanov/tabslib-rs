@@ -54,9 +54,14 @@ enum Family {
 
 /// Applies `opts` to container bytes and returns the new container bytes.
 ///
-/// Errors if a requested setting has nowhere to be written (no zoom element,
-/// a track without a channel strip, an unreadable `PartConfiguration`) rather
-/// than skipping it, so a batch never reports success for an untouched file.
+/// # Errors
+///
+/// Returns any error from reading or writing the container, and
+/// [`crate::Error::Format`] if an entry is not valid UTF-8. Returns
+/// [`crate::Error::Malformed`] if a requested setting has nowhere to be written
+/// (no zoom element, a track without a channel strip, an unreadable
+/// `PartConfiguration`) rather than skipping it, so a batch never reports
+/// success for an untouched file.
 pub fn restyle(bytes: &[u8], opts: &Restyle) -> Result<Vec<u8>> {
     let mut entries = container::read_entries(bytes)?;
     let mut touched_gpif = false;
@@ -84,6 +89,11 @@ pub fn restyle(bytes: &[u8], opts: &Restyle) -> Result<Vec<u8>> {
 
 /// The opening tempo in beats per minute: the first tempo automation of the
 /// score, as stored in the GPIF payload.
+///
+/// # Errors
+///
+/// Returns any error from reading the container, and [`crate::Error::Malformed`] if the archive
+/// has no score payload or the score has no tempo automation.
 pub fn opening_tempo(bytes: &[u8]) -> Result<f64> {
     let entries = container::read_entries(bytes)?;
     let (_, data) = entries

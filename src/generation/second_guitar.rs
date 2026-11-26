@@ -142,6 +142,17 @@ pub enum SecondGuitarError {
 ///
 /// H6 is checked before the document is changed. Setting force permits the
 /// requested extra track while preserving every authored track.
+///
+/// # Errors
+///
+/// Returns [`SecondGuitarError::InvalidSource`] if the source track is not a fretted pitched
+/// track and [`SecondGuitarError::InvalidConfig`] if the tuning, fret window or key is invalid.
+/// Returns [`SecondGuitarError::TrackLimit`] if two or more fretted tracks exist and `force` is
+/// not set, [`SecondGuitarError::EmptySource`] if the source has no notes, and
+/// [`SecondGuitarError::MissingBar`] if a bar reference is missing. Returns
+/// [`SecondGuitarError::Edit`], [`SecondGuitarError::Unplayable`] or
+/// [`SecondGuitarError::Verbatim`] if the track cannot be cloned, a pitch cannot be fingered in
+/// the window, or the result still duplicates a track. `document` is unchanged on error.
 pub fn generate_second_guitar(
     document: &mut Document,
     config: &SecondGuitarConfig,

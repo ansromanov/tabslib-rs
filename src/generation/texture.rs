@@ -98,6 +98,11 @@ pub fn classify_bar_texture(bar: &Bar) -> BarTexture {
 /// Asserts that texture classes are preserved bar-for-bar across a transformation.
 ///
 /// Returns an error if the slice lengths differ or if any bar's texture changed.
+///
+/// # Errors
+///
+/// Returns [`TextureError::BarCountMismatch`] if the slices differ in length and
+/// [`TextureError::TextureMismatch`] for the first bar whose texture class changed.
 pub fn assert_texture_class_preserved(
     before: &[BarTexture],
     after: &[BarTexture],

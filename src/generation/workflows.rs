@@ -36,6 +36,12 @@ pub struct GeneratedTrack {
 /// The source tracks are analyzed bar by bar. The generated hits are solved
 /// against the supplied tempo before they are written into a new percussion
 /// track. A fixed seed produces the same document structure and note data.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `source_tracks` is empty or names a track outside the
+/// document, a bar's meter has no sixteenth grid or beat grouping, or the new track's bars
+/// cannot be added to the score.
 pub fn generate_drums(
     doc: &mut Document,
     source_tracks: &[usize],
@@ -47,6 +53,12 @@ pub fn generate_drums(
 }
 
 /// Adds a deterministic percussion track with per-range section feels.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `source_tracks` is empty or names a track outside the
+/// document, or a section range is empty or outside the document. Also returns it if a bar's
+/// meter has no sixteenth grid or beat grouping, or the new track's bars cannot be added.
 pub fn generate_drums_with_sections(
     doc: &mut Document,
     source_tracks: &[usize],
@@ -62,6 +74,12 @@ pub fn generate_drums_with_sections(
 ///
 /// Bars without an override use [`BeatGrouping::for_meter`]. Group starts
 /// determine where backbeat snares may be placed, including in odd meters.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `source_tracks` is empty or names a track outside the
+/// document, a bar's meter has no sixteenth grid or beat grouping, or the new track's bars
+/// cannot be added to the score.
 pub fn generate_drums_with_groupings(
     doc: &mut Document,
     source_tracks: &[usize],
@@ -74,6 +92,12 @@ pub fn generate_drums_with_groupings(
 }
 
 /// Adds a percussion track selected from a caller-owned MIDI groove index.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `source_tracks` is empty or names a track outside the
+/// document, a bar's meter has no sixteenth grid, or a groove cannot be adapted to a bar's
+/// grid. Also returns it if the new track's bars cannot be added to the score.
 #[cfg(feature = "midi")]
 pub fn generate_drums_from_midi_index(
     doc: &mut Document,
@@ -319,6 +343,13 @@ fn onset_count(pattern: &DrumPattern) -> usize {
 /// be derived from a supported guitar tuning or supplied by the caller. A
 /// document-wide optimizer keeps each event inside `max_fret` and minimizes
 /// string skips and hand-position shifts across bar boundaries.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `source_tracks` is empty or names a track outside the
+/// document, a custom tuning is not 4 or 5 ascending MIDI pitches, or no derived tuning is
+/// supported. Also returns it if a bar's meter has no sixteenth grid or beat grouping, the bass
+/// notes do not fit `max_fret`, or the new track's bars cannot be added.
 pub fn generate_bass(
     doc: &mut Document,
     source_tracks: &[usize],
@@ -331,6 +362,13 @@ pub fn generate_bass(
 ///
 /// Group starts align bass accents in addition to the strategy's normal
 /// source-riff placement.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `source_tracks` is empty or names a track outside the
+/// document, a custom tuning is not 4 or 5 ascending MIDI pitches, or no derived tuning is
+/// supported. Also returns it if a bar's meter has no sixteenth grid or beat grouping, the bass
+/// notes do not fit `max_fret`, or the new track's bars cannot be added.
 pub fn generate_bass_with_groupings(
     doc: &mut Document,
     source_tracks: &[usize],

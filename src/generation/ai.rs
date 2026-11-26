@@ -190,6 +190,12 @@ impl PromptInput {
     }
 
     /// Serializes the structured context with stable field and metric order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AiError::InvalidContext`] if the prompt context is invalid for its task: wrong
+    /// candidate or section count, blank or duplicate labels or ids, or non-finite section
+    /// features.
     pub fn to_json(&self) -> Result<String, AiError> {
         validate_prompt_input(self)?;
         let mut candidates = Vec::with_capacity(self.candidates.len());
@@ -231,6 +237,10 @@ impl PromptInput {
 ///
 /// The mapping stays separate from [`BlindPair::input`], so passing only the
 /// input to a provider does not reveal the original candidate labels.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if either label is blank or both labels are equal.
 pub fn blind_pair(
     left_label: impl Into<String>,
     left: &AssessmentReport,
@@ -371,6 +381,11 @@ pub trait RationaleProvider {
     fn name(&self) -> &str;
 
     /// Returns a JSON response conforming to [`parse_response`]'s schema.
+    ///
+    /// # Errors
+    ///
+    /// Returns the provider's error message as a `String` if the request cannot be completed; the
+    /// text should start with a category prefix that [`classify_provider_failure`] recognizes.
     fn complete(&self, request: &CapturedRequest) -> Result<String, String>;
 }
 
@@ -388,6 +403,11 @@ impl<P: RationaleProvider + ?Sized> RationaleProvider for Box<P> {
 }
 
 /// Captures canonical prompt context before any provider call.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if the task is a tab critique, the provider name is blank,
+/// or the prompt context is invalid for its task.
 pub fn capture_request(
     provider: impl Into<String>,
     input: PromptInput,
@@ -441,6 +461,11 @@ pub fn capture_request(
 }
 
 /// Calls a provider, validates its response, and captures the rationale context.
+///
+/// # Errors
+///
+/// Returns any error from [`capture_request`], [`AiError::ProviderFailure`] if the provider's
+/// `complete` call fails, and any error from [`parse_response`].
 pub fn generate_rationale(
     provider: &impl RationaleProvider,
     input: PromptInput,
@@ -456,6 +481,13 @@ pub fn generate_rationale(
 }
 
 /// Parses and validates a provider response against its captured request.
+///
+/// # Errors
+///
+/// Returns [`AiError::MalformedResponse`] if the response is not a JSON object with exactly
+/// `rationale` and `findings`, if `rationale` is empty or over 4000 characters, if `findings` has
+/// over 100 entries, or if a finding is malformed. Returns [`AiError::UnsupportedFinding`] if a
+/// finding names a candidate, code, or region absent from the request context.
 pub fn parse_response(request: &CapturedRequest, response: &str) -> Result<Rationale, AiError> {
     let value: Value = serde_json::from_str(response)
         .map_err(|error| AiError::MalformedResponse(error.to_string()))?;

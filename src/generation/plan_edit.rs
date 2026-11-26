@@ -247,6 +247,14 @@ fn check_section(section: &SectionRequest) -> Result<(), PlanEditError> {
 ///
 /// The plan is returned rather than mutated in place, so a refused edit cannot
 /// leave a half-applied plan behind.
+///
+/// # Errors
+///
+/// Returns [`PlanEditError::NoSuchSlot`] or [`PlanEditError::AmbiguousSlot`] if an address does
+/// not name exactly one slot. Returns [`PlanEditError::ZeroRepeat`] for a repeat count of zero,
+/// [`PlanEditError::LastSlot`] when dropping the only section, and
+/// [`PlanEditError::InvalidSection`] for an inserted or varied section with no bars or no
+/// candidates. Returns [`PlanEditError::EnergyOutOfRange`] for an energy above 100.
 pub fn apply(
     plan: &ArrangementPlan,
     edit: &PlanEdit,

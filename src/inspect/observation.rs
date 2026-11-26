@@ -236,6 +236,10 @@ pub fn observe(doc: &Document) -> ScoreObservation {
 }
 
 /// Serializes a score observation as deterministic JSON.
+///
+/// # Errors
+///
+/// Returns the `serde_json::Error` if the observation cannot be serialized to JSON.
 pub fn to_json(doc: &Document) -> Result<String, serde_json::Error> {
     serde_json::to_string(&observe(doc))
 }

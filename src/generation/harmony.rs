@@ -104,6 +104,14 @@ pub struct FretboardPosition {
 /// dynamics, flooring subdivisions to a sixteenth note when the bar tempo exceeds
 /// the playability threshold. The seed only resolves equal-cost playable positions;
 /// all pitch and playability decisions are independent of genre or reference data.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::Malformed`] if `config.source_track` is outside the document,
+/// the tuning, fret, leap or octave limits are invalid, the score is empty, or the
+/// harmony interval is more than two octaves. It also fails if the source track has
+/// no pitched notes, a diatonic harmony has no key from the config, document or
+/// key estimate, or the generated ids do not fit the supported range.
 pub fn generate_harmony(doc: &mut Document, config: &HarmonyConfig) -> Result<GeneratedHarmony> {
     validate_config(doc, config)?;
     let key = match config.harmony {

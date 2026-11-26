@@ -69,6 +69,11 @@ fn root_pitch(letter: char) -> Option<i8> {
 }
 
 /// Parses common chord-label spellings such as `C`, `F#m`, and `Bbmaj7`.
+///
+/// # Errors
+///
+/// Returns [`HarmonicError::InvalidLabel`] if the label is empty, does not start with a
+/// note letter `A` to `G`, or has a suffix that is not a supported chord quality.
 pub fn parse_chord_label(label: &str) -> Result<ChordLabel, HarmonicError> {
     let mut chars = label.chars();
     let letter = chars
@@ -213,6 +218,12 @@ impl Default for VoicingOptions {
 }
 
 /// Finds deterministic, playable chord shapes up to `max_fret`.
+///
+/// # Errors
+///
+/// Returns [`HarmonicError::InvalidInput`] if `tuning` is empty or `max_fret` is negative,
+/// and [`HarmonicError::NoVoicing`] if a string has no fret up to `max_fret` that
+/// plays a chord tone.
 pub fn find_voicings(
     chord: ChordLabel,
     tuning: &[i32],
@@ -247,6 +258,12 @@ pub fn find_voicings(
 }
 
 /// Enumerates playable shapes across a caller-selected fret window.
+///
+/// # Errors
+///
+/// Returns [`HarmonicError::InvalidInput`] if `tuning` is empty, `options.min_fret` is
+/// negative or above `options.max_fret`, or `options.max_candidates` is zero. Returns
+/// [`HarmonicError::NoVoicing`] if no playable shape exists in the fret window.
 pub fn find_voicings_with_options(
     chord: ChordLabel,
     tuning: &[i32],
@@ -417,6 +434,13 @@ impl Default for HarmonicRiffConfig {
 }
 
 /// Writes one whole-note chord per bar from a supplied progression.
+///
+/// # Errors
+///
+/// Returns [`HarmonicError::InvalidInput`] if the progression is empty,
+/// `config.bars_per_chord` is zero, or `config.tempo` is not positive, or if a bar id
+/// does not fit the score. Returns any error from [`find_voicings`] if a chord has no
+/// playable voicing on the configured tuning.
 pub fn write_harmonic_riff(
     progression: &[ChordLabel],
     config: &HarmonicRiffConfig,
@@ -505,6 +529,11 @@ pub fn write_harmonic_riff(
 }
 
 /// Samples a caller-supplied list of chord labels into a validated progression.
+///
+/// # Errors
+///
+/// Returns [`HarmonicError::InvalidLabel`] for the first label that
+/// [`parse_chord_label`] rejects.
 pub fn sample_progression(labels: &[&str]) -> Result<Vec<ChordLabel>, HarmonicError> {
     labels
         .iter()
@@ -513,6 +542,10 @@ pub fn sample_progression(labels: &[&str]) -> Result<Vec<ChordLabel>, HarmonicEr
 }
 
 /// Writes multiple progressions using one deterministic configuration.
+///
+/// # Errors
+///
+/// Returns the first error from [`write_harmonic_riff`] for any of the progressions.
 pub fn generate_harmonic_riffs(
     progressions: &[Vec<ChordLabel>],
     config: &HarmonicRiffConfig,

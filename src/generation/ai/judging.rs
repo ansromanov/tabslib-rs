@@ -34,6 +34,12 @@ pub struct CandidateRanking {
 }
 
 /// Asks a provider to rank assessment reports and validates its complete order.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `input` is not a candidate-judging prompt or fails
+/// [`capture_request`] validation, and [`AiError::ProviderFailure`] if the provider's `complete`
+/// call fails. Returns any error from [`parse_candidate_ranking`] for an invalid response.
 pub fn judge_candidates(
     provider: &impl RationaleProvider,
     input: PromptInput,
@@ -54,6 +60,13 @@ pub fn judge_candidates(
 }
 
 /// Parses a versioned ranking and requires every prompt candidate exactly once.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `request` is not a candidate-judging request,
+/// [`AiError::MalformedResponse`] if the response is not a JSON object with `schema_version` 1 and
+/// a `ranking` array of nonempty strings, and [`AiError::InvalidRanking`] if the ranking does not
+/// list each prompt candidate exactly once.
 pub fn parse_candidate_ranking(
     request: &CapturedRequest,
     response: &str,
@@ -113,6 +126,12 @@ pub fn parse_candidate_ranking(
 ///
 /// Rank positions are normalized to 0..=1. A weight of one uses the provider
 /// order alone; zero uses the deterministic order alone. Ties sort by label.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidModelWeight`] if `model_weight` is not a finite value in `0.0..=1.0`,
+/// and [`AiError::InvalidRanking`] if either ranking repeats a label or the two rankings do not
+/// contain the same labels.
 pub fn blend_rankings_with_deterministic(
     model_ranking: &CandidateRanking,
     deterministic_ranking: &[String],
@@ -175,6 +194,11 @@ pub fn blend_rankings_with_deterministic(
 ///
 /// Positive weights prefer larger measurements and negative weights prefer
 /// smaller ones. The function makes no default quality judgments.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `input` is not a candidate-judging prompt, if
+/// `metric_weights` is empty or has a non-finite weight, or if the prompt fails validation.
 pub fn offline_heuristic_judge(
     input: &PromptInput,
     metric_weights: &BTreeMap<Metric, f64>,
@@ -392,6 +416,11 @@ pub fn verify_bar_claims(doc: &Document, claims: &[BarClaim]) -> Vec<VerifiedBar
 }
 
 /// Captures a critique prompt containing format::ascii output and assessment facts.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `label` or `provider` is blank, or if the document cannot
+/// be rendered as ASCII tab text or serialized into the request context.
 #[cfg(feature = "ascii")]
 pub fn capture_tab_critique_request(
     provider: impl Into<String>,
@@ -455,6 +484,11 @@ pub fn capture_tab_critique_request(
 }
 
 /// Asks a provider to critique the rendered ASCII tab with structured findings.
+///
+/// # Errors
+///
+/// Returns any error from [`capture_tab_critique_request`], [`AiError::ProviderFailure`] if the
+/// provider's `complete` call fails, and any error from [`parse_tab_critique_response`].
 #[cfg(feature = "ascii")]
 pub fn critique_tab(
     provider: &impl RationaleProvider,
@@ -472,6 +506,13 @@ pub fn critique_tab(
 }
 
 /// Validates a provider critique, rejecting prose-only praise and unknown bars.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `request` is not an ASCII tab critique request,
+/// [`AiError::MalformedResponse`] if the response does not match the expected JSON schema, and
+/// [`AiError::UnsupportedFinding`] if a finding has an unknown class or severity or names a bar
+/// outside the rendered tab.
 #[cfg(feature = "ascii")]
 pub fn parse_tab_critique_response(
     request: &CapturedRequest,
@@ -556,6 +597,11 @@ impl JudgeAgreement {
 }
 
 /// Measures the ranking's pairwise agreement with available preference records.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if a record has an unsupported version, or if no decisive
+/// record has both of its candidates in `ranking`.
 pub fn judge_preference_agreement(
     ranking: &CandidateRanking,
     records: &[PreferenceRecord],

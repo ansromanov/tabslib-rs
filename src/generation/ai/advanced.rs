@@ -60,6 +60,11 @@ pub fn build_section_assessment_payload(document: &Document) -> Value {
 }
 
 /// Captures structured drum facts and section timeline for a provider.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if the provider name is blank or the context cannot be
+/// serialized to JSON.
 pub fn capture_drum_critique_request(
     provider: impl Into<String>,
     label: impl Into<String>,
@@ -102,6 +107,11 @@ pub fn capture_drum_critique_request(
 }
 
 /// Calls a provider and validates a drum critique response.
+///
+/// # Errors
+///
+/// Returns any error from [`capture_drum_critique_request`], [`AiError::ProviderFailure`] if the
+/// provider's `complete` call fails, and any error from [`parse_drum_critique_response`].
 pub fn critique_drums(
     provider: &impl RationaleProvider,
     label: impl Into<String>,
@@ -119,6 +129,12 @@ pub fn critique_drums(
 }
 
 /// Parses and validates a seven-category drum critique.
+///
+/// # Errors
+///
+/// Returns [`AiError::MalformedResponse`] if the response is not a JSON object with
+/// `schema_version` 1 and a `findings` array of well-formed findings, and
+/// [`AiError::UnsupportedFinding`] if a finding has an unknown category or severity.
 pub fn parse_drum_critique_response(
     request: &CapturedRequest,
     response: &str,
@@ -192,6 +208,13 @@ pub fn parse_drum_critique_response(
 }
 
 /// Calls a provider with caller-supplied section fingerprints.
+///
+/// # Errors
+///
+/// Returns any error from [`capture_request`], including [`AiError::InvalidContext`] if `sections`
+/// is empty or invalid, and [`AiError::ProviderFailure`] if the provider's `complete` call fails.
+/// Returns [`AiError::MalformedResponse`] if the response is not a valid assessment object, and
+/// [`AiError::UnsupportedFinding`] if a `section_index` is outside `sections`.
 pub fn assess_sections_with_ai(
     provider: &impl RationaleProvider,
     sections: Vec<SectionFingerprint>,

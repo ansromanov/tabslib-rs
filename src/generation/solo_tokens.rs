@@ -122,6 +122,16 @@ struct Position {
 /// applies to the next pitch or rest; otherwise events use a quarter note.
 /// Every selected bar must be filled exactly. Results stay in seed order and
 /// are never ranked internally.
+///
+/// # Errors
+///
+/// Returns [`TokenSoloError::InvalidRequest`] if the bar range, key, scale, register, tuning,
+/// fret window or `candidate_count` is invalid. Returns [`TokenSoloError::InvalidToken`],
+/// [`TokenSoloError::TechniqueWithoutPitch`] or [`TokenSoloError::IncompleteHammerOn`] for a
+/// malformed token stream, and [`TokenSoloError::BarDurationMismatch`] or
+/// [`TokenSoloError::DurationOverflow`] if the durations do not fill every selected bar exactly.
+/// Returns [`TokenSoloError::NoFingeringSolution`] if no fingering fits the window, and
+/// [`TokenSoloError::SolverInvariant`] if a generated track violates a hard requirement.
 pub fn compose_solo_tokens(
     document: &Document,
     request: &TokenSoloRequest,

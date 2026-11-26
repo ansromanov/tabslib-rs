@@ -22,6 +22,11 @@ struct OwnedEnvelope {
 }
 
 /// Encodes a valid document as stable UTF-8 JSON.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if the document fails validation (the message names the first
+/// issue's path) or if it cannot be serialized to JSON.
 pub fn encode(document: &Document) -> Result<String> {
     let issues = validation::validate(document);
     if let Some(issue) = issues.first() {
@@ -39,11 +44,20 @@ pub fn encode(document: &Document) -> Result<String> {
 }
 
 /// Encodes a valid document as deterministic UTF-8 JSON bytes.
+///
+/// # Errors
+///
+/// Returns any error from [`encode`].
 pub fn encode_document(document: &Document) -> Result<Vec<u8>> {
     Ok(encode(document)?.into_bytes())
 }
 
 /// Decodes and validates a versioned native JSON document.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `json` is not a valid envelope, its format name or schema
+/// version is unsupported, or the decoded document fails validation.
 pub fn decode(json: &str) -> Result<Document> {
     let envelope: OwnedEnvelope = serde_json::from_str(json)
         .map_err(|error| Error::Malformed(format!("invalid document JSON: {error}")))?;
@@ -70,6 +84,10 @@ pub fn decode(json: &str) -> Result<Document> {
 }
 
 /// Decodes and validates a versioned native JSON document from UTF-8 bytes.
+///
+/// # Errors
+///
+/// Returns [`Error::Malformed`] if `bytes` are not UTF-8, and otherwise any error from [`decode`].
 pub fn decode_document(bytes: &[u8]) -> Result<Document> {
     let json = std::str::from_utf8(bytes)
         .map_err(|error| Error::Malformed(format!("document JSON is not UTF-8: {error}")))?;

@@ -97,6 +97,13 @@ impl PromptInput {
 }
 
 /// Requests and validates labels for every supplied section.
+///
+/// # Errors
+///
+/// Returns any error from [`capture_request`], including [`AiError::InvalidContext`] if `sections`
+/// is empty or has blank or duplicate ids or non-finite features, and [`AiError::ProviderFailure`]
+/// if the provider's `complete` call fails. Returns any error from
+/// [`parse_section_labels_response`] for an invalid response.
 pub fn generate_section_labels(
     provider: &impl RationaleProvider,
     sections: &[SectionFingerprint],
@@ -112,6 +119,13 @@ pub fn generate_section_labels(
 }
 
 /// Requests and validates merge/split suggestions for supplied sections.
+///
+/// # Errors
+///
+/// Returns any error from [`capture_request`], including [`AiError::InvalidContext`] if `sections`
+/// has fewer than two entries or has blank or duplicate ids or non-finite features, and
+/// [`AiError::ProviderFailure`] if the provider's `complete` call fails. Returns any error from
+/// [`parse_section_boundary_response`] for an invalid response.
 pub fn generate_section_boundaries(
     provider: &impl RationaleProvider,
     sections: &[SectionFingerprint],
@@ -127,6 +141,13 @@ pub fn generate_section_boundaries(
 }
 
 /// Parses labels and verifies that each section index appears exactly once.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `request` is not a section-label request, and
+/// [`AiError::MalformedResponse`] if the response is not a JSON object with a `labels` array, if an
+/// entry is malformed or has an out-of-range `section_index` or a label outside 1..=120 characters,
+/// or if the array does not label each section exactly once.
 pub fn parse_section_labels_response(
     request: &CapturedRequest,
     response: &str,
@@ -184,6 +205,13 @@ pub fn parse_section_labels_response(
 }
 
 /// Parses typed merge and split suggestions and checks all indices against the request.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `request` is not a section-boundary request, and
+/// [`AiError::MalformedResponse`] if the response is not a JSON object with `merges` and
+/// `splits_after` arrays, if an index is outside the requested sections, if a merge does not name
+/// unique adjacent sections, or if a boundary is both merged and split.
 pub fn parse_section_boundary_response(
     request: &CapturedRequest,
     response: &str,

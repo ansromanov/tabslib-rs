@@ -184,6 +184,10 @@ pub enum PreferenceError {
 /// The caller owns the storage. This returns the new log text rather than
 /// writing anywhere, because where a log lives is not a decision this crate
 /// makes.
+///
+/// # Errors
+///
+/// Returns [`PreferenceError::Serialization`] if `record` cannot be encoded as JSON.
 pub fn append_record(log: &str, record: &PreferenceRecord) -> Result<String, PreferenceError> {
     let line = serde_json::to_string(record)
         .map_err(|error| PreferenceError::Serialization(error.to_string()))?;
@@ -197,6 +201,11 @@ pub fn append_record(log: &str, record: &PreferenceRecord) -> Result<String, Pre
 }
 
 /// Parses every record in a log, rejecting one from another schema version.
+///
+/// # Errors
+///
+/// Returns [`PreferenceError::Serialization`] if a non-blank line is not a valid record, and
+/// [`PreferenceError::UnsupportedVersion`] if a record has another schema version.
 pub fn read_records(log: &str) -> Result<Vec<PreferenceRecord>, PreferenceError> {
     let mut out = Vec::new();
     for line in log.lines().filter(|line| !line.trim().is_empty()) {

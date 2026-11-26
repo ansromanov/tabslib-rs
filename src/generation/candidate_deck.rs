@@ -207,6 +207,12 @@ impl CandidateDeck {
 ///
 /// Archetype labels are opaque strings so callers can provide their own data
 /// without adding a style enum or genre vocabulary to the library.
+///
+/// # Errors
+///
+/// Returns [`DeckError::InvalidRequest`] if `candidate_count` or `page_size` is zero or
+/// `minimum_distance` is negative or not finite. Returns [`DeckError::InsufficientCandidates`] if
+/// fewer than `candidate_count` candidates can be chosen with the requested minimum distance.
 pub fn build_candidate_deck(
     candidates: &[DeckCandidateInput],
     request: DeckRequest,

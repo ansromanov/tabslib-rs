@@ -149,6 +149,11 @@ pub fn create_track(doc: &mut Document, mut track: Track) -> usize {
     index
 }
 /// Clones a track and all its referenced bars.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `track_index` is out of range or a bar it references is
+/// missing, and [`EditError::Overfull`] if the copy would introduce an over-full voice.
 pub fn clone_track(doc: &mut Document, track_index: usize) -> Result<usize, EditError> {
     let before = overfull_state(doc);
     let source = doc
@@ -197,6 +202,11 @@ pub fn clone_track(doc: &mut Document, track_index: usize) -> Result<usize, Edit
     Ok(new_index)
 }
 /// Removes a track and its bar references.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `track_index` is out of range or is the last remaining
+/// track, and [`EditError::Overfull`] if the removal would introduce an over-full voice.
 pub fn remove_track(doc: &mut Document, track_index: usize) -> Result<Track, EditError> {
     let before = overfull_state(doc);
     if track_index >= doc.tracks.len() {
@@ -231,6 +241,10 @@ pub fn remove_track(doc: &mut Document, track_index: usize) -> Result<Track, Edi
     Ok(removed)
 }
 /// Renames a track, adding a numeric suffix if needed to preserve uniqueness.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `track_index` is out of range.
 pub fn rename_track(doc: &mut Document, track_index: usize, name: &str) -> Result<(), EditError> {
     let unique = unique_name(doc, name, Some(track_index));
     let track = doc
@@ -241,6 +255,11 @@ pub fn rename_track(doc: &mut Document, track_index: usize, name: &str) -> Resul
     Ok(())
 }
 /// Reorders tracks and their per-master-bar references.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `from` or `to` is out of range, and
+/// [`EditError::Overfull`] if the reordering would introduce an over-full voice.
 pub fn reorder_track(doc: &mut Document, from: usize, to: usize) -> Result<(), EditError> {
     let before = overfull_state(doc);
     if from >= doc.tracks.len() || to >= doc.tracks.len() {
@@ -256,6 +275,10 @@ pub fn reorder_track(doc: &mut Document, from: usize, to: usize) -> Result<(), E
 }
 
 /// Returns an independent document containing inclusive master bars.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `start > end` or `end` is past the last master bar.
 pub fn slice(doc: &Document, start: usize, end: usize) -> Result<Document, EditError> {
     let selected = range(start, end, doc.master_bars.len())?;
     let mut out = doc.clone();
@@ -279,6 +302,12 @@ pub fn slice(doc: &Document, start: usize, end: usize) -> Result<Document, EditE
     Ok(out)
 }
 /// Replaces a destination bar range with a source range of equal length.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if either bar range is invalid or out of bounds, the
+/// documents have different track counts, or a source bar reference is missing, and
+/// [`EditError::Overfull`] if the replacement would introduce an over-full voice.
 pub fn splice(
     destination: &mut Document,
     dest_start: usize,
@@ -325,6 +354,12 @@ pub fn splice(
     check(destination, &before)
 }
 /// Appends all bars from another document with matching track count.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if the documents have different track counts, `source` has
+/// no master bars, or a source bar reference is missing, and [`EditError::Overfull`] if the
+/// appended bars would introduce an over-full voice.
 pub fn append(destination: &mut Document, source: &Document) -> Result<(), EditError> {
     let before = overfull_state(destination);
     if destination.tracks.len() != source.tracks.len() {
@@ -363,6 +398,10 @@ pub fn append(destination: &mut Document, source: &Document) -> Result<(), EditE
 }
 
 /// Sets or clears a section marker at a bar.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `bar` is not a valid master-bar index.
 pub fn set_section(
     doc: &mut Document,
     bar: usize,
@@ -376,6 +415,10 @@ pub fn set_section(
     Ok(())
 }
 /// Patches a section marker's text without changing other master-bar data.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `bar` is not a valid master-bar index.
 pub fn patch_section(
     doc: &mut Document,
     bar: usize,
@@ -397,6 +440,11 @@ pub fn rename_section(doc: &mut Document, old: &str, new: &str) {
     }
 }
 /// Silences notes in an inclusive bar range while preserving rhythms and bars.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if `start > end` or `end` is past the last master bar, and
+/// [`EditError::Overfull`] if the edit would introduce an over-full voice.
 pub fn silence(doc: &mut Document, start: usize, end: usize) -> Result<(), EditError> {
     let before = overfull_state(doc);
     let selected = range(start, end, doc.master_bars.len())?;
@@ -414,6 +462,11 @@ pub fn silence(doc: &mut Document, start: usize, end: usize) -> Result<(), EditE
     check(doc, &before)
 }
 /// Removes tracks with no sounding bars, preserving at least one track.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if the document has no tracks, and [`EditError::Overfull`]
+/// if the edit would introduce an over-full voice.
 pub fn drop_empty_tracks(doc: &mut Document) -> Result<(), EditError> {
     let before = overfull_state(doc);
     let mut keep = Vec::new();
@@ -467,6 +520,11 @@ pub fn drop_empty_tracks(doc: &mut Document) -> Result<(), EditError> {
 }
 
 /// Clamps one voice by dropping its final beats until it fits its capacity.
+///
+/// # Errors
+///
+/// Returns [`EditError::InvalidRange`] if the bar, track, or voice index does not exist, and
+/// [`EditError::Overfull`] if the voice is still over-full afterwards.
 pub fn clamp_voice(
     doc: &mut Document,
     track: usize,
@@ -504,6 +562,10 @@ pub fn clamp_voice(
     check(doc, &before)
 }
 /// Asserts that the document has no over-full voice.
+///
+/// # Errors
+///
+/// Returns [`EditError::Overfull`] listing every voice whose content exceeds its bar capacity.
 pub fn assert_no_overfull(doc: &Document) -> Result<(), EditError> {
     let empty = IntegrityState::new();
     check(doc, &empty)

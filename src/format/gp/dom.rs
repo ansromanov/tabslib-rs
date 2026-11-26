@@ -75,11 +75,22 @@ impl Element {
 }
 
 /// Parses a GPIF document into a tree rooted at `<GPIF>`.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::LimitExceeded`] if `xml` exceeds [`DEFAULT_XML_LIMITS`], and
+/// [`crate::Error::Format`] (format `gp`) if the XML is not well formed.
 pub fn parse_xml(xml: &str) -> Result<Element> {
     parse_xml_with_limits(xml, DEFAULT_XML_LIMITS)
 }
 
 /// Parses GPIF XML using caller-supplied size, depth, and node limits.
+///
+/// # Errors
+///
+/// Returns [`crate::Error::LimitExceeded`] if the input is longer than `limits.max_xml_bytes`,
+/// nests deeper than `limits.max_depth`, has more than `limits.max_nodes` elements, or a limit is
+/// zero. Returns [`crate::Error::Format`] (format `gp`) if the XML is not well formed.
 pub fn parse_xml_with_limits(xml: &str, limits: XmlLimits) -> Result<Element> {
     if xml.len() > limits.max_xml_bytes {
         return Err(Error::LimitExceeded {

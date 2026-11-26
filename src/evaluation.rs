@@ -215,6 +215,10 @@ impl RunRecord {
     pub const SCHEMA_VERSION: u32 = 1;
 
     /// Serializes the record in stable pretty JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns the `serde_json::Error` if the record cannot be serialized to JSON.
     pub fn to_json(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }

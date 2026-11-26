@@ -24,6 +24,12 @@ pub struct OpenAiCompatibleProvider {
 
 impl OpenAiCompatibleProvider {
     /// Creates an adapter for a complete Chat Completions URL and model name.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyEndpoint`] or [`ProviderConfigError::EmptyModel`] if
+    /// `endpoint` or `model` is blank, and [`ProviderConfigError::ClientInitialization`] if the
+    /// HTTP client cannot be built.
     pub fn new(
         endpoint: impl Into<String>,
         model: impl Into<String>,
@@ -43,6 +49,10 @@ impl OpenAiCompatibleProvider {
     }
 
     /// Adds a bearer token for endpoints that require authentication.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::EmptyApiKey`] if `api_key` is blank.
     pub fn with_api_key(mut self, api_key: impl Into<String>) -> Result<Self, ProviderConfigError> {
         let api_key = api_key.into();
         validate_api_key(&api_key)?;
@@ -51,6 +61,12 @@ impl OpenAiCompatibleProvider {
     }
 
     /// Uses a different request timeout and retry policy.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ProviderConfigError::InvalidTimeout`] if the timeout is zero,
+    /// [`ProviderConfigError::TooManyRetries`] if `max_retries` exceeds five, and
+    /// [`ProviderConfigError::ClientInitialization`] if the HTTP client cannot be built.
     pub fn with_options(mut self, options: ProviderOptions) -> Result<Self, ProviderConfigError> {
         self.client = client(options)?;
         self.options = options;

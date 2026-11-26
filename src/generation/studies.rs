@@ -124,6 +124,11 @@ pub fn summarize_tab_critique_study(
 }
 
 /// Compares a provider ranking with blind preference records.
+///
+/// # Errors
+///
+/// Returns [`super::ai::AiError::InvalidContext`] if a record has an unsupported version, or if
+/// no decisive record has both of its candidates in `ranking`.
 #[cfg(feature = "ai")]
 pub fn evaluate_judge_against_preferences(
     ranking: &super::ai::CandidateRanking,

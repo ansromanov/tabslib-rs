@@ -57,6 +57,11 @@ pub struct CandidateEvaluation {
 }
 
 /// Compares two assessments without selecting a winner or changing documents.
+///
+/// # Errors
+///
+/// Returns [`AiError::InvalidContext`] if `input` is not a comparison of exactly two candidates
+/// with unique, nonempty labels, or if the two assessments do not contain the same metrics.
 pub fn compare_candidates(input: &PromptInput) -> Result<CandidateEvaluation, AiError> {
     validate_prompt_input(input)?;
     if input.task != PromptTask::CandidateComparison || input.candidates.len() != 2 {
