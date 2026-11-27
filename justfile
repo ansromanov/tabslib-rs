@@ -5,7 +5,7 @@ default:
 
 # The full local gate. Runs in seconds; run it rather than reasoning about
 # whether a change was safe.
-check: fmt-check lint test doc core-only source-gates
+check: fmt-check lint test doc core-only source-gates file-size
 
 # Fast deterministic gate for local iteration and the shared project baseline.
 fast-test:
@@ -18,6 +18,10 @@ source-gates:
     #!/usr/bin/env bash
     set -euo pipefail
     git diff --name-only origin/main...HEAD | python3 scripts/check-source-gates.py
+
+# Production files stay at or below 800 lines (the baseline can only shrink).
+file-size:
+    python3 scripts/check-file-size.py
 
 fmt:
     cargo fmt --all

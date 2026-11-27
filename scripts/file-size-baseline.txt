@@ -1,0 +1,6 @@
+# Production files that were over the limit when the gate was added.
+# Sizes can only go down: split the module, then lower or remove the entry.
+src/generation/arrangement.rs 1020
+src/facade.rs 895
+src/inspect/harmony.rs 853
+src/generation/harmony.rs 838
