@@ -99,3 +99,32 @@ fn pitch_operations_skip_percussion_frets() {
     pitch::retune_preserve_fingering(&mut fingering_kept, 0, &[40, 45, 50, 55, 59, 64]).unwrap();
     assert_eq!(pitches(&fingering_kept), before);
 }
+
+#[test]
+fn retune_rejects_a_track_outside_the_document_instead_of_panicking() {
+    let tuning = fixtures::TUNING_DROP_D;
+    let original = fixtures::power_chords();
+    let missing = original.tracks.len();
+
+    let mut doc = original.clone();
+    let error = pitch::retune_preserve_pitch(&mut doc, missing, &tuning).unwrap_err();
+    assert!(
+        matches!(error, pitch::PitchError::InvalidSelection(_)),
+        "{error}"
+    );
+    assert_eq!(
+        doc, original,
+        "a rejected retune must not change the document"
+    );
+
+    let mut doc = original.clone();
+    let error = pitch::retune_preserve_fingering(&mut doc, missing, &tuning).unwrap_err();
+    assert!(
+        matches!(error, pitch::PitchError::InvalidSelection(_)),
+        "{error}"
+    );
+    assert_eq!(
+        doc, original,
+        "a rejected retune must not change the document"
+    );
+}
